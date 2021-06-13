@@ -34,16 +34,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.main = void 0;
 const core = __importStar(__nccwpck_require__(186));
-const tanka_1 = __nccwpck_require__(781);
+const io = __importStar(__nccwpck_require__(436));
+const tanka = __importStar(__nccwpck_require__(781));
+const child_process_1 = __importDefault(__nccwpck_require__(129));
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const specifiedTankaVersion = core.getInput('tanka-version');
             core.info(`Specified Tanka version: ${specifiedTankaVersion}`);
-            yield tanka_1.installVersion(specifiedTankaVersion);
+            const downloadPath = yield tanka.installVersion(specifiedTankaVersion);
+            core.addPath(downloadPath);
+            let tk = yield io.which('tk');
+            let installedTankaVersion = (child_process_1.default.execSync(`${tk} --version`)).toString();
+            core.info(installedTankaVersion);
         }
         catch (e) {
             core.setFailed(e.message);
@@ -95,8 +104,9 @@ const tc = __importStar(__nccwpck_require__(784));
 function installVersion(version) {
     return __awaiter(this, void 0, void 0, function* () {
         core.info(`Attempting to download Grafana Tanka ${version}`);
-        const downloadPath = yield tc.downloadTool(`https://github.com/grafana/tanka/releases/download/v${version}/tk-linux-amd64`, '/usr/local/bin/tk');
+        const downloadPath = yield tc.downloadTool(`https://github.com/grafana/tanka/releases/download/v${version}/tk-linux-amd64`);
         core.info(`Downloaded to ${downloadPath}`);
+        return downloadPath;
     });
 }
 exports.installVersion = installVersion;
