@@ -1,0 +1,12 @@
+{
+  "keywords": [
+    "actions",
+    "grafana",
+    "setup",
+    "tanka"
+  ],
+  "main": "index.js",
+  "name": "setup-tanka",
+  "private": true,
+  "scripts": {}
+}
