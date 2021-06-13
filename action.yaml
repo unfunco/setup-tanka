@@ -1,0 +1,11 @@
+name: Setup Grafana Tanka
+description: Configures GitHub Actions with support for Grafana Tanka.
+author: Daniel Morris
+inputs:
+  tanka-version:
+    default: 0.16.0
+    description: Grafana Tanka version.
+    required: true
+runs:
+  main: dist/index.js
+  using: node12
