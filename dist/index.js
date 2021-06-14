@@ -120,25 +120,35 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.install = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const io = __importStar(__nccwpck_require__(436));
-const io_util_1 = __nccwpck_require__(962);
+const ioutil = __importStar(__nccwpck_require__(962));
 const tc = __importStar(__nccwpck_require__(784));
 const semver = __importStar(__nccwpck_require__(911));
 const path_1 = __importDefault(__nccwpck_require__(622));
+const os = __importStar(__nccwpck_require__(87));
 function install(version) {
     return __awaiter(this, void 0, void 0, function* () {
         const semanticVersion = formatVersion(version);
+        const executableName = getExecutableName();
         core.info(`Downloading Grafana Tanka ${semanticVersion}`);
-        const tkDownload = yield tc.downloadTool(`https://github.com/grafana/tanka/releases/download/${semanticVersion}/tk-linux-amd64`, undefined);
+        const tkDownload = yield tc.downloadTool(`https://github.com/grafana/tanka/releases/download/${semanticVersion}/${executableName}`, undefined);
         const tkDownloadPath = path_1.default.basename(tkDownload);
-        const tkPath = path_1.default.join(tkDownloadPath, 'tk');
-        core.debug(`Making ${tkPath} executable`);
-        yield io.mv(tkDownload, tkPath);
-        yield io_util_1.chmod(tkPath, 0o755);
+        const tk = path_1.default.join(tkDownloadPath, 'tk');
+        core.debug(`Moving ${tkDownload} to ${tk}`);
+        yield io.mv(tkDownload, tk);
+        core.debug(`Making ${tk} executable`);
+        yield ioutil.chmod(tk, 0o755);
         core.debug(`Adding ${tkDownloadPath} to PATH`);
         core.addPath(tkDownloadPath);
     });
 }
 exports.install = install;
+function getExecutableName() {
+    let platform = os.platform().toString();
+    if (platform === 'win32') {
+        platform = 'windows';
+    }
+    return `tk-${platform}-${os.arch()}`;
+}
 function formatVersion(version) {
     let parts = version.split('-');
     let versionPart = parts[0];

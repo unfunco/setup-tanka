@@ -14,34 +14,46 @@
 
 import * as core from '@actions/core';
 import * as io from '@actions/io';
-import { chmod } from '@actions/io/lib/io-util';
+import * as ioutil from '@actions/io/lib/io-util';
 import * as tc from '@actions/tool-cache';
 import * as semver from 'semver';
 import path from 'path';
+import * as os from 'os';
 
 export async function install(version: string): Promise<void> {
   const semanticVersion = formatVersion(version);
+  const executableName = getExecutableName();
 
   core.info(`Downloading Grafana Tanka ${semanticVersion}`);
   const tkDownload = await tc.downloadTool(
-    `https://github.com/grafana/tanka/releases/download/${semanticVersion}/tk-linux-amd64`,
+    `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${executableName}`,
     undefined
   );
 
   const tkDownloadPath = path.basename(tkDownload);
-  const tkPath = path.join(tkDownloadPath, 'tk');
+  const tk = path.join(tkDownloadPath, 'tk');
 
-  core.debug(`Making ${tkPath} executable`);
-  await io.mv(tkDownload, tkPath);
-  await chmod(tkPath, 0o755);
+  core.debug(`Moving ${tkDownload} to ${tk}`);
+  await io.mv(tkDownload, tk);
+
+  core.debug(`Making ${tk} executable`);
+  await ioutil.chmod(tk, 0o755);
 
   core.debug(`Adding ${tkDownloadPath} to PATH`);
   core.addPath(tkDownloadPath);
 }
 
+function getExecutableName(): string {
+  let platform = os.platform().toString();
+  if (platform === 'win32') {
+    platform = 'windows';
+  }
+
+  return `tk-${platform}-${os.arch()}`;
+}
+
 function formatVersion(version: string): string {
   let parts: string[] = version.split('-');
-
   let versionPart: string = parts[0];
   let preReleasePart: string = parts.length > 1 ? `-${parts[1]}` : '';
 
