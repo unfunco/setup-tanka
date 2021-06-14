@@ -1,8 +1,16 @@
 # GitHub Actions × Grafana Tanka
 
+Setup [Grafana Tanka] for use in GitHub Actions.
+
 ## Getting started
 
-### Usage example
+### Inputs
+
+| Name            | Default    | Description            |
+| --------------- | :--------: | ---------------------- |
+| `tanka-version` | `"0.16.0"` | Grafana Tanka version. |
+
+### Example usage
 
 ```yaml
 jobs:
@@ -26,3 +34,4 @@ jobs:
 Made available under the terms of the [Apache License 2.0](LICENSE.md).
 
 [Daniel Morris]: https://unfun.co
+[Grafana Tanka]: https://tanka.dev
