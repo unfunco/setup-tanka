@@ -47,34 +47,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.main = void 0;
 const core = __importStar(__nccwpck_require__(186));
-const io = __importStar(__nccwpck_require__(436));
-const io_util_1 = __nccwpck_require__(962);
 const tanka = __importStar(__nccwpck_require__(781));
-const path_1 = __importDefault(__nccwpck_require__(622));
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const requestedVersion = core.getInput('tanka-version');
-            const version = tanka.formatVersion(requestedVersion);
-            core.startGroup('Download Grafana Tanka');
-            core.info(`Downloading Grafana Tanka ${version}`);
-            const tkDownload = yield tanka.download(version);
-            core.endGroup();
-            core.startGroup('Prepare Grafana Tanka');
-            const tkDownloadPath = path_1.default.basename(tkDownload);
-            const tkPath = path_1.default.join(tkDownloadPath, 'tk');
-            core.info(`Moving ${tkDownload} to ${tkPath}`);
-            yield io.mv(tkDownload, tkPath);
-            yield io_util_1.chmod(tkPath, 0o755);
-            core.info(`Adding ${tkDownloadPath} to PATH`);
-            core.addPath(tkDownloadPath);
-            core.endGroup();
+            yield tanka.install(requestedVersion);
         }
         catch (e) {
             core.setFailed(e.message);
@@ -132,30 +113,37 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.formatVersion = exports.getDownloadUrl = exports.download = void 0;
+exports.install = void 0;
+const core = __importStar(__nccwpck_require__(186));
+const io = __importStar(__nccwpck_require__(436));
+const io_util_1 = __nccwpck_require__(962);
 const tc = __importStar(__nccwpck_require__(784));
 const semver = __importStar(__nccwpck_require__(911));
-function download(version) {
+const path_1 = __importDefault(__nccwpck_require__(622));
+function install(version) {
     return __awaiter(this, void 0, void 0, function* () {
-        const downloadUrl = getDownloadUrl(version, 'linux', 'amd64');
-        return yield tc.downloadTool(downloadUrl);
+        const semanticVersion = formatVersion(version);
+        core.info(`Downloading Grafana Tanka ${semanticVersion}`);
+        const tkDownload = yield tc.downloadTool(`https://github.com/grafana/tanka/releases/download/${semanticVersion}/tk-linux-amd64`, undefined);
+        const tkDownloadPath = path_1.default.basename(tkDownload);
+        const tkPath = path_1.default.join(tkDownloadPath, 'tk');
+        core.info(`Making ${tkPath} executable`);
+        yield io.mv(tkDownload, tkPath);
+        yield io_util_1.chmod(tkPath, 0o755);
+        core.info(`Adding ${tkDownloadPath} to PATH`);
+        core.addPath(tkDownloadPath);
     });
 }
-exports.download = download;
-function getDownloadUrl(version, os, arch) {
-    return `https://github.com/grafana/tanka/releases/download/${version}/tk-${os}-${arch}`;
-}
-exports.getDownloadUrl = getDownloadUrl;
-// Formats a requested version number into a valid semantic version number
-// format used by the Grafana team when creating releases.
-// Adapted from:
-// https://github.com/actions/setup-go/blob/3b4dc6cbed1779f759b9c638cb83696acea809d1/src/installer.ts#L259
+exports.install = install;
 function formatVersion(version) {
     let parts = version.split('-');
     let versionPart = parts[0];
     let preReleasePart = parts.length > 1 ? `-${parts[1]}` : '';
-    // Convert 0.16 to 0.16.0
+    // Convert X.Y to X.Y.0
     let versionParts = versionPart.split('.');
     if (versionParts.length === 2) {
         versionPart += '.0';
@@ -166,13 +154,12 @@ function formatVersion(version) {
     if (semver.lt(versionPart, '0.16.0')) {
         throw new Error('Only versions >= 0.16.0 are supported');
     }
-    // Convert 0.16.0 to v0.16.0
+    // Convert X.Y.Z to vX.Y.Z
     if ('v' !== versionPart.substr(0, 1)) {
         versionPart = `v${versionPart}`;
     }
     return `${versionPart}${preReleasePart}`;
 }
-exports.formatVersion = formatVersion;
 
 
 /***/ }),

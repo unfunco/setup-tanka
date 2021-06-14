@@ -12,29 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as core from '@actions/core';
+import * as io from '@actions/io';
+import {chmod} from '@actions/io/lib/io-util';
 import * as tc from '@actions/tool-cache';
 import * as semver from 'semver';
+import path from 'path';
 
-export async function download(version: string) {
-  const downloadUrl = getDownloadUrl(version, 'linux', 'amd64');
-  return await tc.downloadTool(downloadUrl);
+export async function install(version: string): Promise<void> {
+  const semanticVersion = formatVersion(version);
+
+  core.info(`Downloading Grafana Tanka ${semanticVersion}`);
+  const tkDownload = await tc.downloadTool(
+    `https://github.com/grafana/tanka/releases/download/${semanticVersion}/tk-linux-amd64`,
+    undefined
+  );
+
+  const tkDownloadPath = path.basename(tkDownload);
+  const tkPath = path.join(tkDownloadPath, 'tk');
+
+  core.info(`Making ${tkPath} executable`);
+  await io.mv(tkDownload, tkPath);
+  await chmod(tkPath, 0o755);
+
+  core.info(`Adding ${tkDownloadPath} to PATH`);
+  core.addPath(tkDownloadPath);
 }
 
-export function getDownloadUrl(version: string, os: string, arch: string): string {
-  return `https://github.com/grafana/tanka/releases/download/${version}/tk-${os}-${arch}`;
-}
-
-// Formats a requested version number into a valid semantic version number
-// format used by the Grafana team when creating releases.
-// Adapted from:
-// https://github.com/actions/setup-go/blob/3b4dc6cbed1779f759b9c638cb83696acea809d1/src/installer.ts#L259
-export function formatVersion(version: string): string {
-  let parts: string[] = version.split('-')
+function formatVersion(version: string): string {
+  let parts: string[] = version.split('-');
 
   let versionPart: string = parts[0];
   let preReleasePart: string = parts.length > 1 ? `-${parts[1]}` : '';
 
-  // Convert 0.16 to 0.16.0
+  // Convert X.Y to X.Y.0
   let versionParts: string[] = versionPart.split('.');
   if (versionParts.length === 2) {
     versionPart += '.0';
@@ -47,7 +58,7 @@ export function formatVersion(version: string): string {
     throw new Error('Only versions >= 0.16.0 are supported');
   }
 
-  // Convert 0.16.0 to v0.16.0
+  // Convert X.Y.Z to vX.Y.Z
   if ('v' !== versionPart.substr(0, 1)) {
     versionPart = `v${versionPart}`;
   }

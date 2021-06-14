@@ -14,8 +14,7 @@
 
 import * as core from '@actions/core';
 import * as tc from '@actions/tool-cache';
-import * as action from '../src/main';
-import * as tm from '../src/tanka';
+import * as tanka from '../src/tanka';
 
 // @ts-ignore
 import osm from 'os';
@@ -43,8 +42,7 @@ describe('GitHub Actions × Grafana Tanka', () => {
     downloadToolSpy = jest.spyOn(tc, 'downloadTool');
 
     logSpy = jest.spyOn(core, 'info');
-    logSpy.mockImplementation(_line => {
-    });
+    logSpy.mockImplementation(_line => {});
   });
 
   afterEach(() => {
@@ -52,19 +50,9 @@ describe('GitHub Actions × Grafana Tanka', () => {
     jest.clearAllMocks();
   });
 
-  it('can format version numbers', async () => {
-    expect(tm.formatVersion('0.16')).toBe('v0.16.0');
-    expect(tm.formatVersion('0.16.2')).toBe('v0.16.2');
-    expect(tm.formatVersion('v0.17.10-beta1')).toBe('v0.17.10-beta1');
-  });
-
-  it('does not format version numbers < 0.16.0', async () => {
-    expect(() => {
-      tm.formatVersion('0.15');
-    }).toThrowError('Only versions >= 0.16.0 are supported');
-  });
-
-  it('does something', async () => {
-    await action.main();
+  it('does not install versions prior to 0.16.0', async () => {
+    await expect(tanka.install('0.15.0')).rejects.toThrowError(
+      'Only versions >= 0.16.0 are supported',
+    );
   });
 });
