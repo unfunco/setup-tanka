@@ -43,15 +43,15 @@ const core = __importStar(__nccwpck_require__(186));
 const io = __importStar(__nccwpck_require__(436));
 const tanka = __importStar(__nccwpck_require__(781));
 const child_process_1 = __importDefault(__nccwpck_require__(129));
+const path_1 = __importDefault(__nccwpck_require__(622));
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const specifiedTankaVersion = core.getInput('tanka-version');
-            core.info(`Specified Tanka version: ${specifiedTankaVersion}`);
-            const downloadPath = yield tanka.installVersion(specifiedTankaVersion);
-            core.addPath(downloadPath);
-            let tk = yield io.which('tk');
-            let installedTankaVersion = (child_process_1.default.execSync(`${tk} --version`)).toString();
+            const downloadPath = yield tanka.downloadVersion(specifiedTankaVersion);
+            core.addPath(path_1.default.dirname(downloadPath));
+            const tk = yield io.which('tk');
+            const installedTankaVersion = (child_process_1.default.execSync(`${tk} --version`)).toString();
             core.info(installedTankaVersion);
         }
         catch (e) {
@@ -98,18 +98,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.installVersion = void 0;
+exports.downloadVersion = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const tc = __importStar(__nccwpck_require__(784));
-function installVersion(version) {
+function downloadVersion(version) {
     return __awaiter(this, void 0, void 0, function* () {
         core.info(`Attempting to download Grafana Tanka ${version}`);
-        const downloadPath = yield tc.downloadTool(`https://github.com/grafana/tanka/releases/download/v${version}/tk-linux-amd64`);
-        core.info(`Downloaded to ${downloadPath}`);
-        return downloadPath;
+        return yield tc.downloadTool(`https://github.com/grafana/tanka/releases/download/v${version}/tk-linux-amd64`);
     });
 }
-exports.installVersion = installVersion;
+exports.downloadVersion = downloadVersion;
 
 
 /***/ }),
