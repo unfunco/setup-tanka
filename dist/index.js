@@ -41,6 +41,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.main = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const io = __importStar(__nccwpck_require__(436));
+const io_util_1 = __nccwpck_require__(962);
 const tanka = __importStar(__nccwpck_require__(781));
 const child_process_1 = __importDefault(__nccwpck_require__(129));
 const path_1 = __importDefault(__nccwpck_require__(622));
@@ -48,10 +49,13 @@ function main() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const specifiedTankaVersion = core.getInput('tanka-version');
-            const downloadPath = yield tanka.downloadVersion(specifiedTankaVersion);
-            core.addPath(path_1.default.dirname(downloadPath));
-            const tk = yield io.which('tk');
-            const installedTankaVersion = (child_process_1.default.execSync(`${tk} --version`)).toString();
+            const tankaDownload = yield tanka.downloadVersion(specifiedTankaVersion);
+            const tankaDownloadPath = path_1.default.basename(tankaDownload);
+            const tkPath = path_1.default.join(tankaDownloadPath, 'tk');
+            yield io.mv(tankaDownload, tkPath);
+            yield io_util_1.chmod(tkPath, 0o755);
+            core.addPath(tankaDownloadPath);
+            const installedTankaVersion = (child_process_1.default.execSync(`tk --version`)).toString();
             core.info(installedTankaVersion);
         }
         catch (e) {
