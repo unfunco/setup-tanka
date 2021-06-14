@@ -43,27 +43,25 @@ const core = __importStar(__nccwpck_require__(186));
 const io = __importStar(__nccwpck_require__(436));
 const io_util_1 = __nccwpck_require__(962);
 const tanka = __importStar(__nccwpck_require__(781));
-const child_process_1 = __importDefault(__nccwpck_require__(129));
 const path_1 = __importDefault(__nccwpck_require__(622));
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const specifiedTankaVersion = core.getInput('tanka-version');
-            core.startGroup('Download');
-            core.info(`Downloading Grafana Tanka ${specifiedTankaVersion}`);
-            const tkDownload = yield tanka.downloadVersion(specifiedTankaVersion);
+            const requestedVersion = core.getInput('tanka-version');
+            const version = tanka.formatVersion(requestedVersion);
+            core.startGroup('Download Grafana Tanka');
+            core.info(`Downloading Grafana Tanka ${version}`);
+            const tkDownload = yield tanka.download(version);
+            core.endGroup();
+            core.startGroup('Prepare Grafana Tanka');
             const tkDownloadPath = path_1.default.basename(tkDownload);
             const tkPath = path_1.default.join(tkDownloadPath, 'tk');
-            core.endGroup();
-            core.startGroup('Configure');
             core.info(`Moving ${tkDownload} to ${tkPath}`);
             yield io.mv(tkDownload, tkPath);
             yield io_util_1.chmod(tkPath, 0o755);
             core.info(`Adding ${tkDownloadPath} to PATH`);
             core.addPath(tkDownloadPath);
             core.endGroup();
-            const installedTankaVersion = (child_process_1.default.execSync(`tk --version`)).toString();
-            core.info(installedTankaVersion);
         }
         catch (e) {
             core.setFailed(e.message);
@@ -109,19 +107,46 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getDownloadUrl = exports.downloadVersion = void 0;
+exports.formatVersion = exports.getDownloadUrl = exports.download = void 0;
 const tc = __importStar(__nccwpck_require__(784));
-function downloadVersion(version) {
+const semver = __importStar(__nccwpck_require__(911));
+function download(version) {
     return __awaiter(this, void 0, void 0, function* () {
         const downloadUrl = getDownloadUrl(version, 'linux', 'amd64');
         return yield tc.downloadTool(downloadUrl);
     });
 }
-exports.downloadVersion = downloadVersion;
+exports.download = download;
 function getDownloadUrl(version, os, arch) {
-    return `https://github.com/grafana/tanka/releases/download/v${version}/tk-${os}-${arch}`;
+    return `https://github.com/grafana/tanka/releases/download/${version}/tk-${os}-${arch}`;
 }
 exports.getDownloadUrl = getDownloadUrl;
+// Formats a requested version number into a valid semantic version number
+// format used by the Grafana team when creating releases.
+// Adapted from:
+// https://github.com/actions/setup-go/blob/3b4dc6cbed1779f759b9c638cb83696acea809d1/src/installer.ts#L259
+function formatVersion(version) {
+    let parts = version.split('-');
+    let versionPart = parts[0];
+    let preReleasePart = parts.length > 1 ? `-${parts[1]}` : '';
+    // Convert 0.16 to 0.16.0
+    let versionParts = versionPart.split('.');
+    if (versionParts.length === 2) {
+        versionPart += '.0';
+    }
+    // 0.16.0 appears to be the first version with releases for different
+    // platforms and architectures, so to make things easy, only support
+    // versions greater than or equal to 0.16.0.
+    if (semver.lt(versionPart, '0.16.0')) {
+        throw new Error('Only versions >= 0.16.0 are supported');
+    }
+    // Convert 0.16.0 to v0.16.0
+    if ('v' !== versionPart.substr(0, 1)) {
+        versionPart = `v${versionPart}`;
+    }
+    return `${versionPart}${preReleasePart}`;
+}
+exports.formatVersion = formatVersion;
 
 
 /***/ }),
