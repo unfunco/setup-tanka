@@ -19,3 +19,10 @@ jobs:
     - name: Apply the configuration
       run: tk apply environments/production --dangerous-auto-approve
 ```
+
+## License
+
+© 2021 [Daniel Morris]  
+Made available under the terms of the [Apache License 2.0](LICENSE.md).
+
+[Daniel Morris]: https://unfun.co
