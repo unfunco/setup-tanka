@@ -145,14 +145,16 @@ function install(version) {
 exports.install = install;
 function getExecutableName() {
     let arch = os.arch();
+    let ext = '';
     let platform = os.platform().toString();
-    if (platform === 'win32') {
-        platform = 'windows';
-    }
     if (arch === 'x64') {
         arch = 'amd64';
     }
-    return `tk-${platform}-${arch}`;
+    if (platform === 'win32') {
+        platform = 'windows';
+        ext = '.exe';
+    }
+    return `tk-${platform}-${arch}${ext}`;
 }
 function formatVersion(version) {
     let parts = version.split('-');

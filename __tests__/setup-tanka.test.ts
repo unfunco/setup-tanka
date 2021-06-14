@@ -137,7 +137,7 @@ describe('GitHub Actions × Grafana Tanka', () => {
     await tanka.install('0.16.0');
 
     expect(downloadToolSpy).toHaveBeenCalledWith(
-      'https://github.com/grafana/tanka/releases/download/v0.16.0/tk-windows-amd64',
+      'https://github.com/grafana/tanka/releases/download/v0.16.0/tk-windows-amd64.exe',
       undefined
     );
   });

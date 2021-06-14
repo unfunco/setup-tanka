@@ -45,16 +45,19 @@ export async function install(version: string): Promise<void> {
 
 function getExecutableName(): string {
   let arch = os.arch();
+  let ext = '';
   let platform = os.platform().toString();
-  if (platform === 'win32') {
-    platform = 'windows';
-  }
 
   if (arch === 'x64') {
     arch = 'amd64';
   }
 
-  return `tk-${platform}-${arch}`;
+  if (platform === 'win32') {
+    platform = 'windows';
+    ext = '.exe';
+  }
+
+  return `tk-${platform}-${arch}${ext}`;
 }
 
 function formatVersion(version: string): string {
