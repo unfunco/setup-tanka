@@ -8,14 +8,27 @@ import path from 'path';
 export async function main() {
   try {
     const specifiedTankaVersion = core.getInput('tanka-version');
-    const tankaDownload = await tanka.downloadVersion(specifiedTankaVersion);
-    const tankaDownloadPath = path.basename(tankaDownload);
-    const tkPath = path.join(tankaDownloadPath, 'tk');
 
-    await io.mv(tankaDownload, tkPath);
+    core.startGroup('Download');
+
+    core.info(`Downloading Grafana Tanka ${specifiedTankaVersion}`);
+    const tkDownload = await tanka.downloadVersion(specifiedTankaVersion);
+
+    const tkDownloadPath = path.basename(tkDownload);
+    const tkPath = path.join(tkDownloadPath, 'tk');
+
+    core.endGroup();
+
+    core.startGroup('Configure');
+
+    core.info(`Moving ${tkDownload} to ${tkPath}`);
+    await io.mv(tkDownload, tkPath);
     await chmod(tkPath, 0o755);
 
-    core.addPath(tankaDownloadPath);
+    core.info(`Adding ${tkDownloadPath} to PATH`);
+    core.addPath(tkDownloadPath);
+
+    core.endGroup();
 
     const installedTankaVersion = (cp.execSync(`tk --version`)).toString();
     core.info(installedTankaVersion);

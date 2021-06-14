@@ -49,12 +49,19 @@ function main() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const specifiedTankaVersion = core.getInput('tanka-version');
-            const tankaDownload = yield tanka.downloadVersion(specifiedTankaVersion);
-            const tankaDownloadPath = path_1.default.basename(tankaDownload);
-            const tkPath = path_1.default.join(tankaDownloadPath, 'tk');
-            yield io.mv(tankaDownload, tkPath);
+            core.startGroup('Download');
+            core.info(`Downloading Grafana Tanka ${specifiedTankaVersion}`);
+            const tkDownload = yield tanka.downloadVersion(specifiedTankaVersion);
+            const tkDownloadPath = path_1.default.basename(tkDownload);
+            const tkPath = path_1.default.join(tkDownloadPath, 'tk');
+            core.endGroup();
+            core.startGroup('Configure');
+            core.info(`Moving ${tkDownload} to ${tkPath}`);
+            yield io.mv(tkDownload, tkPath);
             yield io_util_1.chmod(tkPath, 0o755);
-            core.addPath(tankaDownloadPath);
+            core.info(`Adding ${tkDownloadPath} to PATH`);
+            core.addPath(tkDownloadPath);
+            core.endGroup();
             const installedTankaVersion = (child_process_1.default.execSync(`tk --version`)).toString();
             core.info(installedTankaVersion);
         }
@@ -102,16 +109,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.downloadVersion = void 0;
-const core = __importStar(__nccwpck_require__(186));
+exports.getDownloadUrl = exports.downloadVersion = void 0;
 const tc = __importStar(__nccwpck_require__(784));
 function downloadVersion(version) {
     return __awaiter(this, void 0, void 0, function* () {
-        core.info(`Attempting to download Grafana Tanka ${version}`);
-        return yield tc.downloadTool(`https://github.com/grafana/tanka/releases/download/v${version}/tk-linux-amd64`);
+        const downloadUrl = getDownloadUrl(version, 'linux', 'amd64');
+        return yield tc.downloadTool(downloadUrl);
     });
 }
 exports.downloadVersion = downloadVersion;
+function getDownloadUrl(version, os, arch) {
+    return `https://github.com/grafana/tanka/releases/download/v${version}/tk-${os}-${arch}`;
+}
+exports.getDownloadUrl = getDownloadUrl;
 
 
 /***/ }),
