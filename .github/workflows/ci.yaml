@@ -6,6 +6,21 @@ on:
     - main
 
 jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Setup Node
+      uses: actions/setup-node@v2
+      with:
+        node-version: "12"
+    - name: Install dependencies
+      run: npm i
+    - name: Run tests
+      run: npm run test
+
   dogfooding:
     name: Dogfooding
     runs-on: ubuntu-latest

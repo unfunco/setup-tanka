@@ -12,6 +12,7 @@
     "target": "ES6"
   },
   "exclude": [
+    "**/*.test.ts",
     "node_modules"
   ]
 }
