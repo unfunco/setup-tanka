@@ -14,7 +14,7 @@
 
 import * as core from '@actions/core';
 import * as io from '@actions/io';
-import {chmod} from '@actions/io/lib/io-util';
+import { chmod } from '@actions/io/lib/io-util';
 import * as tc from '@actions/tool-cache';
 import * as semver from 'semver';
 import path from 'path';
@@ -31,11 +31,11 @@ export async function install(version: string): Promise<void> {
   const tkDownloadPath = path.basename(tkDownload);
   const tkPath = path.join(tkDownloadPath, 'tk');
 
-  core.info(`Making ${tkPath} executable`);
+  core.debug(`Making ${tkPath} executable`);
   await io.mv(tkDownload, tkPath);
   await chmod(tkPath, 0o755);
 
-  core.info(`Adding ${tkDownloadPath} to PATH`);
+  core.debug(`Adding ${tkDownloadPath} to PATH`);
   core.addPath(tkDownloadPath);
 }
 

@@ -20,20 +20,15 @@ import * as tanka from '../src/tanka';
 import osm from 'os';
 
 describe('GitHub Actions × Grafana Tanka', () => {
-  let inputs = {} as any;
   let os = {} as any;
 
   let archSpy: jest.SpyInstance;
+  let debugSpy: jest.SpyInstance;
   let downloadToolSpy: jest.SpyInstance;
-  let inputSpy: jest.SpyInstance;
   let logSpy: jest.SpyInstance;
   let platformSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    inputs = {};
-    inputSpy = jest.spyOn(core, 'getInput');
-    inputSpy.mockImplementation(name => inputs[name]);
-
     archSpy = jest.spyOn(osm, 'arch');
     archSpy.mockImplementation(() => os['arch']);
     platformSpy = jest.spyOn(osm, 'platform');
@@ -41,6 +36,7 @@ describe('GitHub Actions × Grafana Tanka', () => {
 
     downloadToolSpy = jest.spyOn(tc, 'downloadTool');
 
+    debugSpy = jest.spyOn(core, 'debug');
     logSpy = jest.spyOn(core, 'info');
     logSpy.mockImplementation(_line => {});
   });
@@ -52,7 +48,11 @@ describe('GitHub Actions × Grafana Tanka', () => {
 
   it('does not install versions prior to 0.16.0', async () => {
     await expect(tanka.install('0.15.0')).rejects.toThrowError(
-      'Only versions >= 0.16.0 are supported',
+      'Only versions >= 0.16.0 are supported'
     );
+  });
+
+  it('prepends a v to the semantic version number', async () => {
+    await tanka.install('0.16.0');
   });
 });

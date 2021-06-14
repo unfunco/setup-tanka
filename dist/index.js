@@ -131,10 +131,10 @@ function install(version) {
         const tkDownload = yield tc.downloadTool(`https://github.com/grafana/tanka/releases/download/${semanticVersion}/tk-linux-amd64`, undefined);
         const tkDownloadPath = path_1.default.basename(tkDownload);
         const tkPath = path_1.default.join(tkDownloadPath, 'tk');
-        core.info(`Making ${tkPath} executable`);
+        core.debug(`Making ${tkPath} executable`);
         yield io.mv(tkDownload, tkPath);
         yield io_util_1.chmod(tkPath, 0o755);
-        core.info(`Adding ${tkDownloadPath} to PATH`);
+        core.debug(`Adding ${tkDownloadPath} to PATH`);
         core.addPath(tkDownloadPath);
     });
 }
