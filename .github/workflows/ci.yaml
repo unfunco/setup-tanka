@@ -16,3 +16,5 @@ jobs:
       uses: ./
       with:
         tanka-version: 0.16.0
+    - name: Show the Grafana Tanka version
+      run: tk --version
