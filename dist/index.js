@@ -129,8 +129,9 @@ function install(version) {
     return __awaiter(this, void 0, void 0, function* () {
         const semanticVersion = formatVersion(version);
         const executableName = getExecutableName();
-        core.info(`Downloading Grafana Tanka ${semanticVersion}`);
-        const tkDownload = yield tc.downloadTool(`https://github.com/grafana/tanka/releases/download/${semanticVersion}/${executableName}`, undefined);
+        const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${executableName}`;
+        core.info(`Downloading Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
+        const tkDownload = yield tc.downloadTool(tkDownloadUrl, undefined);
         const tkDownloadPath = path_1.default.basename(tkDownload);
         const tk = path_1.default.join(tkDownloadPath, 'tk');
         core.debug(`Moving ${tkDownload} to ${tk}`);

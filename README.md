@@ -1,5 +1,7 @@
 # GitHub Actions × Grafana Tanka
 
+![CI](https://github.com/unfunco/setup-tanka/actions/workflows/ci.yaml/badge.svg)
+
 Setup [Grafana Tanka] for use in GitHub Actions.
 
 ## Getting started

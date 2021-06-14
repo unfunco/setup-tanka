@@ -24,11 +24,9 @@ export async function install(version: string): Promise<void> {
   const semanticVersion = formatVersion(version);
   const executableName = getExecutableName();
 
-  core.info(`Downloading Grafana Tanka ${semanticVersion}`);
-  const tkDownload = await tc.downloadTool(
-    `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${executableName}`,
-    undefined
-  );
+  const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${executableName}`;
+  core.info(`Downloading Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
+  const tkDownload = await tc.downloadTool(tkDownloadUrl, undefined);
 
   const tkDownloadPath = path.basename(tkDownload);
   const tk = path.join(tkDownloadPath, 'tk');
