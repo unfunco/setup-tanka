@@ -25,7 +25,9 @@ export async function install(version: string): Promise<void> {
   const executableName = getExecutableName();
 
   const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${executableName}`;
-  core.info(`Downloading Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
+  core.info(
+    `Downloading Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`
+  );
   const tkDownload = await tc.downloadTool(tkDownloadUrl, undefined);
 
   const tkDownloadPath = path.basename(tkDownload);
@@ -42,12 +44,17 @@ export async function install(version: string): Promise<void> {
 }
 
 function getExecutableName(): string {
+  let arch = os.arch();
   let platform = os.platform().toString();
   if (platform === 'win32') {
     platform = 'windows';
   }
 
-  return `tk-${platform}-${os.arch()}`;
+  if (arch === 'x64') {
+    arch = 'amd64';
+  }
+
+  return `tk-${platform}-${arch}`;
 }
 
 function formatVersion(version: string): string {

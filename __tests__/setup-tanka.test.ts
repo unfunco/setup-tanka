@@ -141,4 +141,18 @@ describe('GitHub Actions × Grafana Tanka', () => {
       undefined
     );
   });
+
+  it('installs windows/x64 versions', async () => {
+    os.platform = 'linux';
+    os.arch = 'x64';
+
+    downloadToolSpy.mockImplementation(() => '/');
+
+    await tanka.install('0.16.0');
+
+    expect(downloadToolSpy).toHaveBeenCalledWith(
+      'https://github.com/grafana/tanka/releases/download/v0.16.0/tk-linux-amd64',
+      undefined
+    );
+  });
 });
