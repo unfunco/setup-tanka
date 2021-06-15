@@ -23,23 +23,21 @@ import * as os from 'os';
 export async function install(version: string): Promise<void> {
   const semanticVersion = formatVersion(version);
   const executableName = getExecutableName();
-
   const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${executableName}`;
-  core.info(
-    `Downloading Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`
-  );
+
+  core.info(`Download Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
   const tkDownload = await tc.downloadTool(tkDownloadUrl, undefined);
 
   const tkDownloadPath = path.basename(tkDownload);
   const tk = path.join(tkDownloadPath, 'tk');
 
-  core.debug(`Moving ${tkDownload} to ${tk}`);
+  core.debug(`Move ${tkDownload} to ${tk}`);
   await io.mv(tkDownload, tk);
 
-  core.debug(`Making ${tk} executable`);
+  core.debug(`Make ${tk} executable`);
   await ioutil.chmod(tk, 0o755);
 
-  core.debug(`Adding ${tkDownloadPath} to PATH`);
+  core.debug(`Add ${tkDownloadPath} to PATH`);
   core.addPath(tkDownloadPath);
 }
 

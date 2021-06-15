@@ -71,96 +71,26 @@ describe('GitHub Actions × Grafana Tanka', () => {
     );
   });
 
-  it('installs linux/amd64 versions', async () => {
-    os.platform = 'linux';
-    os.arch = 'amd64';
+  test.each([
+    ['linux', 'amd64', 'tk-linux-amd64'],
+    ['linux', 'arm', 'tk-linux-arm'],
+    ['linux', 'arm64', 'tk-linux-arm64'],
+    ['darwin', 'arm64', 'tk-darwin-arm64'],
+    ['win32', 'amd64', 'tk-windows-amd64.exe'],
+    ['win32', 'x64', 'tk-windows-amd64.exe'],
+  ])(
+    'installs the correct binary for %s/%s',
+    async (platform, arch, binary) => {
+      os.platform = platform;
+      os.arch = arch;
 
-    downloadToolSpy.mockImplementation(
-      () => '/home/runner/work/_temp/ddb10bd3-6898-4b4b-b1b6-614fca44d420'
-    );
+      downloadToolSpy.mockImplementation(() => '/temp');
+      await tanka.install('0.16.0');
 
-    await tanka.install('v0.16.0');
-    let expectedPath: string = 'ddb10bd3-6898-4b4b-b1b6-614fca44d420';
-
-    expect(downloadToolSpy).toHaveBeenCalledWith(
-      'https://github.com/grafana/tanka/releases/download/v0.16.0/tk-linux-amd64',
-      undefined
-    );
-
-    expect(mvSpy).toHaveBeenCalled();
-    expect(chmodSpy).toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      `::add-path::${expectedPath}${osm.EOL}`
-    );
-  });
-
-  it('installs linux/arm versions', async () => {
-    os.platform = 'linux';
-    os.arch = 'arm';
-
-    downloadToolSpy.mockImplementation(() => '/');
-
-    await tanka.install('0.16.0');
-
-    expect(downloadToolSpy).toHaveBeenCalledWith(
-      'https://github.com/grafana/tanka/releases/download/v0.16.0/tk-linux-arm',
-      undefined
-    );
-  });
-
-  it('installs linux/arm64 versions', async () => {
-    os.platform = 'linux';
-    os.arch = 'arm64';
-
-    downloadToolSpy.mockImplementation(() => '/');
-
-    await tanka.install('0.16.0');
-
-    expect(downloadToolSpy).toHaveBeenCalledWith(
-      'https://github.com/grafana/tanka/releases/download/v0.16.0/tk-linux-arm64',
-      undefined
-    );
-  });
-
-  it('installs darwin/arm64 versions', async () => {
-    os.platform = 'darwin';
-    os.arch = 'arm64';
-
-    downloadToolSpy.mockImplementation(() => '/');
-
-    await tanka.install('0.16.0');
-
-    expect(downloadToolSpy).toHaveBeenCalledWith(
-      'https://github.com/grafana/tanka/releases/download/v0.16.0/tk-darwin-arm64',
-      undefined
-    );
-  });
-
-  it('installs windows/amd64 versions', async () => {
-    os.platform = 'win32';
-    os.arch = 'amd64';
-
-    downloadToolSpy.mockImplementation(() => '/');
-
-    await tanka.install('0.16.0');
-
-    expect(downloadToolSpy).toHaveBeenCalledWith(
-      'https://github.com/grafana/tanka/releases/download/v0.16.0/tk-windows-amd64.exe',
-      undefined
-    );
-  });
-
-  it('installs windows/x64 versions', async () => {
-    os.platform = 'linux';
-    os.arch = 'x64';
-
-    downloadToolSpy.mockImplementation(() => '/');
-
-    await tanka.install('0.16.0');
-
-    expect(downloadToolSpy).toHaveBeenCalledWith(
-      'https://github.com/grafana/tanka/releases/download/v0.16.0/tk-linux-amd64',
-      undefined
-    );
-  });
+      expect(downloadToolSpy).toHaveBeenCalledWith(
+        `https://github.com/grafana/tanka/releases/download/v0.16.0/${binary}`,
+        undefined
+      );
+    }
+  );
 });

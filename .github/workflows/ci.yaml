@@ -45,3 +45,17 @@ jobs:
         if [[ $version =~ "tk version v0.16.0" ]]; then
           exit 1
         fi
+
+  dogfood-windows:
+    name: Dogfood (windows-latest)
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Setup Grafana Tanka
+      uses: ./
+      with:
+        tanka-version: 0.16.0
+    - name: Show the Grafana Tanka version
+      run: |
+        tk.exe --version

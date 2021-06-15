@@ -130,15 +130,15 @@ function install(version) {
         const semanticVersion = formatVersion(version);
         const executableName = getExecutableName();
         const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${executableName}`;
-        core.info(`Downloading Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
+        core.info(`Download Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
         const tkDownload = yield tc.downloadTool(tkDownloadUrl, undefined);
         const tkDownloadPath = path_1.default.basename(tkDownload);
         const tk = path_1.default.join(tkDownloadPath, 'tk');
-        core.debug(`Moving ${tkDownload} to ${tk}`);
+        core.debug(`Move ${tkDownload} to ${tk}`);
         yield io.mv(tkDownload, tk);
-        core.debug(`Making ${tk} executable`);
+        core.debug(`Make ${tk} executable`);
         yield ioutil.chmod(tk, 0o755);
-        core.debug(`Adding ${tkDownloadPath} to PATH`);
+        core.debug(`Add ${tkDownloadPath} to PATH`);
         core.addPath(tkDownloadPath);
     });
 }
