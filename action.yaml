@@ -1,6 +1,9 @@
 name: Setup Grafana Tanka
 description: Configures GitHub Actions with support for Grafana Tanka.
 author: Daniel Morris
+branding:
+  color: orange
+  icon: anchor
 inputs:
   tanka-version:
     default: 0.16.0
