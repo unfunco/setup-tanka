@@ -1,11 +1,17 @@
 # GitHub Actions × Grafana Tanka
 
 ![CI](https://github.com/unfunco/setup-tanka/actions/workflows/ci.yaml/badge.svg)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-yellow.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-purple.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Setup [Grafana Tanka] for use in GitHub Actions.
+Setup [Grafana Tanka] for use with GitHub Actions.
+
+Tanka is a utility that allows Kubernetes resources to be defined and managed
+in the [Jsonnet] language.
 
 ## Getting started
+
+When specifying `tanka-version` the `v` prefix can be omitted, additionally,
+the patch number is not required if it is equal to zero.
 
 ### Inputs
 
@@ -14,21 +20,6 @@ Setup [Grafana Tanka] for use in GitHub Actions.
 | `tanka-version` | `"0.16.0"` | Grafana Tanka version. |
 
 ### Example usage
-
-```jsonnet
-local k = import "k.libsonnet";
-
-{
-  example: k.apps.v1.deployment.new(
-    name="nginx",
-    replicas=1,
-    containers=[k.core.v1.container.new(
-      name="nginx",
-      image="nginx:latest",
-    )],
-  ),
-}
-```
 
 The following workflow uses the action to apply a production configuration.
 
@@ -49,7 +40,7 @@ jobs:
       uses: unfunco/setup-tanka@v1
       with:
         tanka-version: 0.16.0
-    - name: Apply the configuration
+    - name: Apply the production configuration
       run: tk apply environments/production --dangerous-auto-approve
 ```
 
@@ -60,3 +51,4 @@ Made available under the terms of the [Apache License 2.0](LICENSE.md).
 
 [Daniel Morris]: https://unfun.co
 [Grafana Tanka]: https://tanka.dev
+[Jsonnet]: https://jsonnet.org
