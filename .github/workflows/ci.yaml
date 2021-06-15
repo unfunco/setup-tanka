@@ -28,7 +28,7 @@ jobs:
         os: [ ubuntu-latest, windows-latest ]
 
   dogfood-linux:
-    name: Dogfood
+    name: Dogfood (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code

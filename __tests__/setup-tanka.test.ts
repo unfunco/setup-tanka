@@ -33,6 +33,11 @@ describe('GitHub Actions × Grafana Tanka', () => {
   let mvSpy: jest.SpyInstance;
   let platformSpy: jest.SpyInstance;
 
+  beforeAll(() => {
+    process.env['GITHUB_PATH'] = '';
+    console.log('::stop-commands::stoptoken');
+  });
+
   beforeEach(() => {
     archSpy = jest.spyOn(osm, 'arch');
     archSpy.mockImplementation(() => os['arch']);
@@ -40,17 +45,20 @@ describe('GitHub Actions × Grafana Tanka', () => {
     platformSpy.mockImplementation(() => os['platform']);
 
     chmodSpy = jest.spyOn(ioutil, 'chmod');
-    downloadToolSpy = jest.spyOn(tc, 'downloadTool');
-    mvSpy = jest.spyOn(io, 'mv');
-
     chmodSpy.mockImplementation(async (): Promise<void> => {});
     consoleSpy = jest.spyOn(process.stdout, 'write');
     debugSpy = jest.spyOn(core, 'debug');
     debugSpy.mockImplementation(_line => {});
+    downloadToolSpy = jest.spyOn(tc, 'downloadTool');
     logSpy = jest.spyOn(core, 'info');
     logSpy.mockImplementation(_line => {});
+    mvSpy = jest.spyOn(io, 'mv');
     mvSpy.mockImplementation(async (): Promise<void> => {});
   });
+
+  afterAll(() => {
+    console.log('::stoptoken::');
+  }, 100000);
 
   afterEach(() => {
     jest.resetAllMocks();
