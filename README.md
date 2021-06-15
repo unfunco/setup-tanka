@@ -11,17 +11,20 @@ in the [Jsonnet] language.
 ## Getting started
 
 When specifying `tanka-version` the `v` prefix can be omitted, additionally,
-the patch number is not required if it is equal to zero.
+the patch number is not required if it is equal to zero. The versions `v0.16.0`,
+`0.16.0`, `v0.16`, and `0.16` are all valid and all refer to the same semantic
+version of Tanka.
 
 ### Inputs
 
-| Name            | Default    | Description            |
-| --------------- | :--------: | ---------------------- |
-| `tanka-version` | `"0.16.0"` | Grafana Tanka version. |
+| Name            | Default     | Description            |
+| --------------- | :---------: | ---------------------- |
+| `tanka-version` | `"v0.16.0"` | Grafana Tanka version. |
 
 ### Example usage
 
-The following workflow uses the action to apply a production configuration.
+The following example workflow uses the setup-tanka action to automatically
+apply resources to a production environment.
 
 ```yaml
 name: Deploy

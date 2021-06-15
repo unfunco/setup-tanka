@@ -22,14 +22,14 @@ import * as os from 'os';
 
 export async function install(version: string): Promise<void> {
   const semanticVersion = formatVersion(version);
-  const executableName = getExecutableName();
-  const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${executableName}`;
+  const exeDownloadName = getExeDownloadName();
+  const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${exeDownloadName}`;
 
   core.info(`Download Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
   const tkDownload = await tc.downloadTool(tkDownloadUrl, undefined);
 
   const tkDownloadPath = path.basename(tkDownload);
-  const tk = path.join(tkDownloadPath, 'tk');
+  const tk = path.join(tkDownloadPath, getExeName());
 
   core.debug(`Move ${tkDownload} to ${tk}`);
   await io.mv(tkDownload, tk);
@@ -41,7 +41,15 @@ export async function install(version: string): Promise<void> {
   core.addPath(tkDownloadPath);
 }
 
-function getExecutableName(): string {
+function getExeName(): string {
+  if (os.platform().toString() === 'win32') {
+    return 'tk.exe';
+  }
+
+  return 'tk';
+}
+
+function getExeDownloadName(): string {
   let arch = os.arch();
   let ext = '';
   let platform = os.platform().toString();

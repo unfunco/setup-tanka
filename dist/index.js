@@ -128,12 +128,12 @@ const os = __importStar(__nccwpck_require__(87));
 function install(version) {
     return __awaiter(this, void 0, void 0, function* () {
         const semanticVersion = formatVersion(version);
-        const executableName = getExecutableName();
-        const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${executableName}`;
+        const exeDownloadName = getExeDownloadName();
+        const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${exeDownloadName}`;
         core.info(`Download Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
         const tkDownload = yield tc.downloadTool(tkDownloadUrl, undefined);
         const tkDownloadPath = path_1.default.basename(tkDownload);
-        const tk = path_1.default.join(tkDownloadPath, 'tk');
+        const tk = path_1.default.join(tkDownloadPath, getExeName());
         core.debug(`Move ${tkDownload} to ${tk}`);
         yield io.mv(tkDownload, tk);
         core.debug(`Make ${tk} executable`);
@@ -143,7 +143,13 @@ function install(version) {
     });
 }
 exports.install = install;
-function getExecutableName() {
+function getExeName() {
+    if (os.platform().toString() === 'win32') {
+        return 'tk.exe';
+    }
+    return 'tk';
+}
+function getExeDownloadName() {
     let arch = os.arch();
     let ext = '';
     let platform = os.platform().toString();

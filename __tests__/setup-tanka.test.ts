@@ -79,8 +79,8 @@ describe('GitHub Actions × Grafana Tanka', () => {
     ['win32', 'amd64', 'tk-windows-amd64.exe'],
     ['win32', 'x64', 'tk-windows-amd64.exe'],
   ])(
-    'installs the correct binary for %s/%s',
-    async (platform, arch, binary) => {
+    'installs the correct executable for %s/%s',
+    async (platform, arch, exe) => {
       os.platform = platform;
       os.arch = arch;
 
@@ -88,7 +88,7 @@ describe('GitHub Actions × Grafana Tanka', () => {
       await tanka.install('0.16.0');
 
       expect(downloadToolSpy).toHaveBeenCalledWith(
-        `https://github.com/grafana/tanka/releases/download/v0.16.0/${binary}`,
+        `https://github.com/grafana/tanka/releases/download/v0.16.0/${exe}`,
         undefined
       );
     }
