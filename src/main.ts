@@ -19,7 +19,7 @@ export async function main(): Promise<void> {
   try {
     const requestedVersion: string = core.getInput('tanka-version');
     await tanka.install(requestedVersion);
-  } catch (e) {
+  } catch (e: any) {
     core.setFailed(e.message);
   }
 }
