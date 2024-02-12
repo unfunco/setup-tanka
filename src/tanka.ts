@@ -12,82 +12,82 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as core from '@actions/core';
-import * as io from '@actions/io';
-import * as ioutil from '@actions/io/lib/io-util';
-import * as tc from '@actions/tool-cache';
-import * as semver from 'semver';
-import path from 'path';
-import * as os from 'os';
+import * as core from '@actions/core'
+import * as io from '@actions/io'
+import * as ioutil from '@actions/io/lib/io-util'
+import * as tc from '@actions/tool-cache'
+import * as semver from 'semver'
+import path from 'path'
+import * as os from 'os'
 
 export async function install(version: string): Promise<void> {
-  const semanticVersion = formatVersion(version);
-  const exeDownloadName = getExeDownloadName();
-  const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${exeDownloadName}`;
+  const semanticVersion = formatVersion(version)
+  const exeDownloadName = getExeDownloadName()
+  const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${exeDownloadName}`
 
-  core.info(`Download Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
-  const tkDownload = await tc.downloadTool(tkDownloadUrl, undefined);
+  core.info(`Download Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`)
+  const tkDownload = await tc.downloadTool(tkDownloadUrl, undefined)
 
-  const tkDownloadPath = path.basename(tkDownload);
-  const tk = path.join(tkDownloadPath, getExeName());
+  const tkDownloadPath = path.basename(tkDownload)
+  const tk = path.join(tkDownloadPath, getExeName())
 
-  core.debug(`Move ${tkDownload} to ${tk}`);
-  await io.mv(tkDownload, tk);
+  core.debug(`Move ${tkDownload} to ${tk}`)
+  await io.mv(tkDownload, tk)
 
-  core.debug(`Make ${tk} executable`);
-  await ioutil.chmod(tk, 0o755);
+  core.debug(`Make ${tk} executable`)
+  await ioutil.chmod(tk, 0o755)
 
-  core.debug(`Add ${tkDownloadPath} to PATH`);
-  core.addPath(tkDownloadPath);
+  core.debug(`Add ${tkDownloadPath} to PATH`)
+  core.addPath(tkDownloadPath)
 }
 
 function getExeName(): string {
   if (os.platform().toString() === 'win32') {
-    return 'tk.exe';
+    return 'tk.exe'
   }
 
-  return 'tk';
+  return 'tk'
 }
 
 function getExeDownloadName(): string {
-  let arch = os.arch();
-  let ext = '';
-  let platform = os.platform().toString();
+  let arch = os.arch()
+  let ext = ''
+  let platform = os.platform().toString()
 
   if (arch === 'x64') {
-    arch = 'amd64';
+    arch = 'amd64'
   }
 
   if (platform === 'win32') {
-    platform = 'windows';
-    ext = '.exe';
+    platform = 'windows'
+    ext = '.exe'
   }
 
-  return `tk-${platform}-${arch}${ext}`;
+  return `tk-${platform}-${arch}${ext}`
 }
 
 function formatVersion(version: string): string {
-  let parts: string[] = version.split('-');
-  let versionPart: string = parts[0];
-  let preReleasePart: string = parts.length > 1 ? `-${parts[1]}` : '';
+  let parts: string[] = version.split('-')
+  let versionPart: string = parts[0]
+  let preReleasePart: string = parts.length > 1 ? `-${parts[1]}` : ''
 
   // Convert X.Y to X.Y.0
-  let versionParts: string[] = versionPart.split('.');
+  let versionParts: string[] = versionPart.split('.')
   if (versionParts.length === 2) {
-    versionPart += '.0';
+    versionPart += '.0'
   }
 
   // 0.16.0 appears to be the first version with releases for different
   // platforms and architectures, so to make things easy, only support
   // versions greater than or equal to 0.16.0.
   if (semver.lt(versionPart, '0.16.0')) {
-    throw new Error('Only versions >= 0.16.0 are supported');
+    throw new Error('Only versions >= 0.16.0 are supported')
   }
 
   // Convert X.Y.Z to vX.Y.Z
   if ('v' !== versionPart.substr(0, 1)) {
-    versionPart = `v${versionPart}`;
+    versionPart = `v${versionPart}`
   }
 
-  return `${versionPart}${preReleasePart}`;
+  return `${versionPart}${preReleasePart}`
 }

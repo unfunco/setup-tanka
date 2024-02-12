@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as core from '@actions/core';
-import * as tanka from './tanka';
+import * as core from '@actions/core'
+import * as tanka from './tanka'
 
 export async function main(): Promise<void> {
   try {
-    const requestedVersion: string = core.getInput('tanka-version');
-    await tanka.install(requestedVersion);
+    const requestedVersion: string = core.getInput('tanka-version')
+    await tanka.install(requestedVersion)
   } catch (e: any) {
-    core.setFailed(e.message);
+    core.setFailed(e.message)
   }
 }

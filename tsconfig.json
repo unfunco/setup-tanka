@@ -1,18 +1,12 @@
 {
   "compilerOptions": {
     "esModuleInterop": true,
-    "lib": [
-      "DOM",
-      "ES6"
-    ],
+    "lib": ["DOM", "ES6"],
     "module": "CommonJS",
     "outDir": "lib",
     "rootDir": "src",
     "strict": true,
     "target": "ES6"
   },
-  "exclude": [
-    "**/*.test.ts",
-    "node_modules"
-  ]
+  "exclude": ["**/*.test.ts", "node_modules"]
 }

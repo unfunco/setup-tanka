@@ -1,0 +1,4 @@
+*.yaml
+CHANGELOG.md
+dist/
+node_modules/
