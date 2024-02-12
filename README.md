@@ -17,7 +17,7 @@ version of Tanka.
 
 ### Inputs
 
-| Name            | Default     | Description            |
+| Name            |   Default   | Description            |
 | --------------- | :---------: | ---------------------- |
 | `tanka-version` | `"v0.18.1"` | Grafana Tanka version. |
 
@@ -30,7 +30,7 @@ apply resources to a production environment.
 name: Deploy
 
 on:
-  workflow_dispatch: { }
+  workflow_dispatch: {}
 
 jobs:
   deploy:
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Setup Grafana Tanka
       uses: unfunco/setup-tanka@v1
       with:
