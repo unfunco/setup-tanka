@@ -39,5 +39,6 @@
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",
     "test": "jest --coverage"
-  }
+  },
+  "version": "1.0.0"
 }
