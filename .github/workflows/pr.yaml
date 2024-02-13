@@ -6,6 +6,7 @@ on:
     - main
     paths-ignore:
     - .editorconfig
+    - .gitattributes
     - .gitignore
     - .prettierignore
     - action.yaml
