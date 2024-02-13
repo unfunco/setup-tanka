@@ -1,5 +1,5 @@
 name: Setup Grafana Tanka
-description: Configures GitHub Actions with support for Grafana Tanka.
+description: Installs Grafana Tanka in GitHub Actions.
 author: Daniel Morris
 branding:
   color: orange
@@ -11,4 +11,4 @@ inputs:
     required: true
 runs:
   main: dist/index.js
-  using: node16
+  using: node20
