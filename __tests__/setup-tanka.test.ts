@@ -26,7 +26,6 @@ describe('GitHub Actions × Grafana Tanka', () => {
 
   let archSpy: jest.SpyInstance
   let chmodSpy: jest.SpyInstance
-  let consoleSpy: jest.SpyInstance
   let debugSpy: jest.SpyInstance
   let downloadToolSpy: jest.SpyInstance
   let logSpy: jest.SpyInstance
@@ -38,34 +37,38 @@ describe('GitHub Actions × Grafana Tanka', () => {
     console.log('::stop-commands::stoptoken')
   })
 
-  beforeEach(() => {
+  beforeEach((): void => {
     archSpy = jest.spyOn(osm, 'arch')
     archSpy.mockImplementation(() => os['arch'])
+
     platformSpy = jest.spyOn(osm, 'platform')
     platformSpy.mockImplementation(() => os['platform'])
 
     chmodSpy = jest.spyOn(ioutil, 'chmod')
-    chmodSpy.mockImplementation(async (): Promise<void> => {})
-    consoleSpy = jest.spyOn(process.stdout, 'write')
+    chmodSpy.mockImplementation(async (): Promise<void> => void 0)
+
     debugSpy = jest.spyOn(core, 'debug')
-    debugSpy.mockImplementation((_line) => {})
+    debugSpy.mockImplementation((_line): void => void 0)
+
     downloadToolSpy = jest.spyOn(tc, 'downloadTool')
+
     logSpy = jest.spyOn(core, 'info')
-    logSpy.mockImplementation((_line) => {})
+    logSpy.mockImplementation((_line): void => void 0)
+
     mvSpy = jest.spyOn(io, 'mv')
-    mvSpy.mockImplementation(async (): Promise<void> => {})
+    mvSpy.mockImplementation(async (): Promise<void> => void 0)
   })
 
-  afterAll(() => {
+  afterAll((): void => {
     console.log('::stoptoken::')
   }, 100000)
 
-  afterEach(() => {
+  afterEach((): void => {
     jest.resetAllMocks()
     jest.clearAllMocks()
   })
 
-  it('does not install versions prior to 0.16.0', async () => {
+  it('does not install versions prior to 0.16.0', async (): Promise<void> => {
     await expect(tanka.install('0.15.0')).rejects.toThrowError(
       'Only versions >= 0.16.0 are supported',
     )
@@ -80,11 +83,11 @@ describe('GitHub Actions × Grafana Tanka', () => {
     ['win32', 'x64', 'tk-windows-amd64.exe'],
   ])(
     'installs the correct executable for %s/%s',
-    async (platform, arch, exe) => {
+    async (platform, arch, exe): Promise<void> => {
       os.platform = platform
       os.arch = arch
 
-      downloadToolSpy.mockImplementation(() => '/temp')
+      downloadToolSpy.mockImplementation((): string => '/temp')
       await tanka.install('0.16.0')
 
       expect(downloadToolSpy).toHaveBeenCalledWith(

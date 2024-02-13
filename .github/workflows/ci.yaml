@@ -37,13 +37,13 @@ jobs:
     - name: Setup Grafana Tanka
       uses: ./
       with:
-        tanka-version: 0.18.1
+        tanka-version: 0.26.0
     - name: Show the Grafana Tanka version
       run: |
         version="$(tk --version)"
         echo $version
 
-        if [[ $version =~ "tk version v0.18.1" ]]; then
+        if [[ $version =~ "tk version v0.26.0" ]]; then
           exit 1
         fi
 
@@ -56,7 +56,7 @@ jobs:
     - name: Setup Grafana Tanka
       uses: ./
       with:
-        tanka-version: 0.18.1
+        tanka-version: 0.26.0
     - name: Show the Grafana Tanka version
       run: |
         tk.exe --version
