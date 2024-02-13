@@ -2,10 +2,12 @@
   "compilerOptions": {
     "allowJs": false,
     "esModuleInterop": true,
-    "lib": ["DOM", "ES6"],
+    "lib": ["ES6"],
     "module": "CommonJS",
+    "noImplicitAny": true,
     "outDir": "lib",
     "rootDir": "src",
+    "skipLibCheck": true,
     "strict": true,
     "target": "ES6"
   },

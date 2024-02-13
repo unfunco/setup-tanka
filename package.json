@@ -30,6 +30,10 @@
   "main": "lib/setup-tanka.js",
   "name": "setup-tanka",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unfunco/setup-tanka.git"
+  },
   "scripts": {
     "build": "tsc && ncc build",
     "fmt": "prettier --write .",

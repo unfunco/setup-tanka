@@ -20,8 +20,8 @@ import * as semver from 'semver'
 import path from 'path'
 import * as os from 'os'
 
-export async function install(version: string): Promise<void> {
-  const semanticVersion = formatVersion(version)
+export async function install(tankaVersion: string): Promise<void> {
+  const semanticVersion = formatVersion(tankaVersion)
   const exeDownloadName = getExeDownloadName()
   const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${exeDownloadName}`
 
@@ -85,7 +85,7 @@ function formatVersion(version: string): string {
   }
 
   // Convert X.Y.Z to vX.Y.Z
-  if ('v' !== versionPart.substr(0, 1)) {
+  if ('v' !== versionPart.substring(0, 1)) {
     versionPart = `v${versionPart}`
   }
 
