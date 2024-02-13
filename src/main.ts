@@ -15,11 +15,13 @@
 import * as core from '@actions/core'
 import * as tanka from './tanka'
 
-export async function main(): Promise<void> {
+export const main = async (): Promise<void> => {
   try {
-    const requestedVersion: string = core.getInput('tanka-version')
-    await tanka.install(requestedVersion)
-  } catch (e: any) {
-    core.setFailed(e.message)
+    const tankaVersion: string = core.getInput('tanka-version')
+    await tanka.install(tankaVersion)
+  } catch (e: unknown) {
+    if (e instanceof Error) {
+      core.setFailed(e.message)
+    }
   }
 }
