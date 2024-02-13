@@ -6,6 +6,7 @@ on:
     - main
     paths-ignore:
     - .editorconfig
+    - .gitattributes
     - .gitignore
     - .prettierignore
     - action.yaml
@@ -38,6 +39,7 @@ jobs:
 
   dogfood-linux:
     name: Dogfood (ubuntu-latest)
+    needs: [ verify ]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -57,6 +59,7 @@ jobs:
 
   dogfood-windows:
     name: Dogfood (windows-latest)
+    needs: [ verify ]
     runs-on: windows-latest
     steps:
     - name: Checkout code
