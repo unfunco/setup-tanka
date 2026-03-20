@@ -6,9 +6,9 @@ branding:
   icon: anchor
 inputs:
   tanka-version:
-    default: 0.26.0
+    default: 0.36.3
     description: Grafana Tanka version.
     required: true
 runs:
   main: dist/index.js
-  using: node20
+  using: node24

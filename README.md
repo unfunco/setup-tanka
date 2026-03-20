@@ -18,8 +18,8 @@ version of Tanka.
 ### Inputs
 
 | Name            |   Default   | Description            |
-| --------------- | :---------: | ---------------------- |
-| `tanka-version` | `"v0.26.0"` | Grafana Tanka version. |
+| --------------- |:-----------:| ---------------------- |
+| `tanka-version` | `"v0.36.3"` | Grafana Tanka version. |
 
 ### Example usage
 
@@ -42,7 +42,7 @@ jobs:
     - name: Setup Grafana Tanka
       uses: unfunco/setup-tanka@v1
       with:
-        tanka-version: 0.26.0
+        tanka-version: 0.36.3
     - name: Apply the production configuration
       run: tk apply environments/production --dangerous-auto-approve
 ```

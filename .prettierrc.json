@@ -11,5 +11,7 @@
   "quoteProps": "as-needed",
   "semi": false,
   "singleQuote": true,
-  "trailingComma": "all"
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "useTabs": false
 }

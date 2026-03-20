@@ -12,25 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as core from '@actions/core'
-import * as io from '@actions/io'
-import * as ioutil from '@actions/io/lib/io-util'
-import * as tc from '@actions/tool-cache'
-import * as tanka from '../src/tanka'
+import { jest } from '@jest/globals'
 
-// @ts-ignore
-import osm from 'os'
+const core = {
+  addPath: jest.fn<(path: string) => void>(),
+  debug: jest.fn<(message: string) => void>(),
+  info: jest.fn<(message: string) => void>(),
+}
+
+const io = {
+  mv: jest.fn<(source: string, destination: string) => Promise<void>>(),
+}
+
+const ioutil = {
+  chmod: jest.fn<(path: string, mode: number) => Promise<void>>(),
+}
+
+const tc = {
+  downloadTool: jest.fn<(url: string, dest?: string) => Promise<string>>(),
+}
+
+const os = {
+  arch: jest.fn<() => string>(),
+  platform: jest.fn<() => NodeJS.Platform>(),
+}
+
+jest.unstable_mockModule('@actions/core', () => core)
+jest.unstable_mockModule('@actions/io', () => io)
+jest.unstable_mockModule('@actions/io/lib/io-util', () => ioutil)
+jest.unstable_mockModule('@actions/tool-cache', () => tc)
+jest.unstable_mockModule('os', () => os)
+
+const tanka = await import('../src/tanka')
 
 describe('GitHub Actions × Grafana Tanka', () => {
-  let os = {} as any
-
-  let archSpy: jest.SpyInstance
-  let chmodSpy: jest.SpyInstance
-  let debugSpy: jest.SpyInstance
-  let downloadToolSpy: jest.SpyInstance
-  let logSpy: jest.SpyInstance
-  let mvSpy: jest.SpyInstance
-  let platformSpy: jest.SpyInstance
+  const runtime = {
+    arch: '',
+    platform: '' as NodeJS.Platform,
+  }
 
   beforeAll(() => {
     process.env['GITHUB_PATH'] = ''
@@ -38,25 +57,17 @@ describe('GitHub Actions × Grafana Tanka', () => {
   })
 
   beforeEach((): void => {
-    archSpy = jest.spyOn(osm, 'arch')
-    archSpy.mockImplementation(() => os['arch'])
+    jest.resetAllMocks()
 
-    platformSpy = jest.spyOn(osm, 'platform')
-    platformSpy.mockImplementation(() => os['platform'])
+    os.arch.mockImplementation(() => runtime['arch'])
+    os.platform.mockImplementation(() => runtime['platform'])
 
-    chmodSpy = jest.spyOn(ioutil, 'chmod')
-    chmodSpy.mockImplementation(async (): Promise<void> => void 0)
-
-    debugSpy = jest.spyOn(core, 'debug')
-    debugSpy.mockImplementation((_line): void => void 0)
-
-    downloadToolSpy = jest.spyOn(tc, 'downloadTool')
-
-    logSpy = jest.spyOn(core, 'info')
-    logSpy.mockImplementation((_line): void => void 0)
-
-    mvSpy = jest.spyOn(io, 'mv')
-    mvSpy.mockImplementation(async (): Promise<void> => void 0)
+    ioutil.chmod.mockImplementation(async (): Promise<void> => void 0)
+    core.addPath.mockImplementation((_path: string): void => void 0)
+    core.debug.mockImplementation((_line: string): void => void 0)
+    core.info.mockImplementation((_line: string): void => void 0)
+    tc.downloadTool.mockImplementation(async (): Promise<string> => '/temp')
+    io.mv.mockImplementation(async (): Promise<void> => void 0)
   })
 
   afterAll((): void => {
@@ -64,12 +75,11 @@ describe('GitHub Actions × Grafana Tanka', () => {
   }, 100000)
 
   afterEach((): void => {
-    jest.resetAllMocks()
     jest.clearAllMocks()
   })
 
   it('does not install versions prior to 0.16.0', async (): Promise<void> => {
-    await expect(tanka.install('0.15.0')).rejects.toThrowError(
+    await expect(tanka.install('0.15.0')).rejects.toThrow(
       'Only versions >= 0.16.0 are supported',
     )
   })
@@ -84,13 +94,11 @@ describe('GitHub Actions × Grafana Tanka', () => {
   ])(
     'installs the correct executable for %s/%s',
     async (platform, arch, exe): Promise<void> => {
-      os.platform = platform
-      os.arch = arch
-
-      downloadToolSpy.mockImplementation((): string => '/temp')
+      runtime.platform = platform as NodeJS.Platform
+      runtime.arch = arch
       await tanka.install('0.16.0')
 
-      expect(downloadToolSpy).toHaveBeenCalledWith(
+      expect(tc.downloadTool).toHaveBeenCalledWith(
         `https://github.com/grafana/tanka/releases/download/v0.16.0/${exe}`,
         undefined,
       )
