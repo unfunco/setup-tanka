@@ -27,8 +27,8 @@
     "setup",
     "tanka"
   ],
-  "main": "lib/setup-tanka.js",
-  "name": "setup-tanka",
+  "license": "MIT",
+  "name": "@unfunco/setup-tanka",
   "private": true,
   "repository": {
     "type": "git",

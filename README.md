@@ -1,7 +1,7 @@
 # GitHub Actions × Grafana Tanka
 
 ![CI](https://github.com/unfunco/setup-tanka/actions/workflows/ci.yaml/badge.svg)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-purple.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
 Setup [Grafana Tanka] for use with GitHub Actions.
 
@@ -50,7 +50,7 @@ jobs:
 ## License
 
 © 2021 [Daniel Morris]  
-Made available under the terms of the [Apache License 2.0](LICENSE.md).
+Made available under the terms of the [MIT License](LICENSE.md).
 
 [Daniel Morris]: https://unfun.co
 [Grafana Tanka]: https://tanka.dev
