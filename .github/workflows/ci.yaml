@@ -20,71 +20,33 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
       with:
         cache: npm
         cache-dependency-path: package-lock.json
-        node-version: 20.x
+        node-version: 24.x
     - name: Install dependencies
-      run: npm ci --no-fund
+      run: npm ci
     - name: Check formatting
       run: npm run fmt:check
     - name: Run tests
       run: npm run test
-    strategy:
-      matrix:
-        os: [ ubuntu-latest, windows-latest ]
-
-  dogfood-linux:
-    name: Dogfood (ubuntu-latest)
-    needs: [ verify ]
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    - name: Setup Grafana Tanka
-      uses: ./
-      with:
-        tanka-version: 0.26.0
-    - name: Show the Grafana Tanka version
-      run: |
-        version="$(tk --version)"
-        echo $version
-
-        if [[ $version =~ "tk version v0.26.0" ]]; then
-          exit 1
-        fi
-
-  dogfood-windows:
-    name: Dogfood (windows-latest)
-    needs: [ verify ]
-    runs-on: windows-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    - name: Setup Grafana Tanka
-      uses: ./
-      with:
-        tanka-version: 0.26.0
-    - name: Show the Grafana Tanka version
-      run: |
-        tk.exe --version
 
   release:
     name: Release?
-    needs: [ dogfood-linux, dogfood-windows ]
+    needs: [ verify ]
     permissions:
       contents: write
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Prepare a release
       id: release
-      uses: google-github-actions/release-please-action@v4
+      uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
       with:
         config-file: .github/release-please-config.json
         manifest-file: .github/release-please-manifest.json

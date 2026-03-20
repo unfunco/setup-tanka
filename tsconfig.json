@@ -2,14 +2,15 @@
   "compilerOptions": {
     "allowJs": false,
     "esModuleInterop": true,
-    "lib": ["ES6"],
-    "module": "CommonJS",
+    "lib": ["ES2022"],
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
     "noImplicitAny": true,
     "outDir": "lib",
     "rootDir": "src",
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES6"
+    "target": "ES2022"
   },
   "exclude": ["**/*.test.ts", "node_modules"]
 }

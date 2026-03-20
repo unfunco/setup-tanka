@@ -50,7 +50,7 @@ function getExeName(): string {
 }
 
 function getExeDownloadName(): string {
-  let arch = os.arch()
+  let arch: string = os.arch()
   let ext = ''
   let platform = os.platform().toString()
 
