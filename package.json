@@ -39,5 +39,6 @@
     "fmt:check": "prettier --check .",
     "fmt:fix": "prettier --write .",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage"
-  }
+  },
+  "version": "1.0.0"
 }
