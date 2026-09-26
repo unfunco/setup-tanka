@@ -40,14 +40,4 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-    - name: Prepare a release
-      id: release
-      uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
-      with:
-        config-file: .github/release-please-config.json
-        manifest-file: .github/release-please-manifest.json
-        token: ${{ secrets.GITHUB_TOKEN }}
+    uses: unfunco/meta/.github/workflows/release-please.yaml@2cf07936a31dca1b82fe1e447f48e1580c10880e # v0.2.0
