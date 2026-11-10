@@ -4,13 +4,10 @@
 import * as core from '@actions/core'
 import * as tanka from './tanka.ts'
 
-export const main = async (): Promise<void> => {
+export async function main(): Promise<void> {
   try {
-    const tankaVersion: string = core.getInput('tanka-version')
-    await tanka.install(tankaVersion)
+    await tanka.install(core.getInput('tanka-version'))
   } catch (e: unknown) {
-    if (e instanceof Error) {
-      core.setFailed(e.message)
-    }
+    core.setFailed(e instanceof Error ? e.message : String(e))
   }
 }
