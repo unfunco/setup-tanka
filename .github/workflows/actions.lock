@@ -3,13 +3,12 @@
 # Docs: https://gh.io/actions-lockfile
 version: 'v0.0.3'
 workflows:
-    '.github/workflows/ci.yaml':
-        - 'actions/checkout@v7.0.1'
-        - 'actions/setup-node@v7.1.0'
-    '.github/workflows/pr.yaml':
-        - 'actions/checkout@v7.0.1'
-        - 'actions/setup-node@v7.1.0'
+    '.github/workflows/ci.yaml': []
+    '.github/workflows/pr.yaml': []
     '.github/workflows/pr_label.yaml': []
+    '.github/workflows/verify.yaml':
+        - 'actions/checkout@v7.0.1'
+        - 'actions/setup-node@v7.1.0'
 dependencies:
     'actions/checkout@v7.0.1':
         ref: 'v7.0.1'
