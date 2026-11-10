@@ -1,0 +1,57 @@
+name: Verify
+
+on:
+  workflow_call: { }
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-26.04
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7.0.1
+      with:
+        persist-credentials: false
+    - name: Setup Node.js
+      uses: actions/setup-node@v7.1.0
+      with:
+        cache: npm
+        cache-dependency-path: package-lock.json
+        node-version: 24.x
+    - name: Install dependencies
+      run: npm ci --ignore-scripts
+    - name: Check formatting
+      run: npm run fmt:check
+    - name: Check types
+      run: npm run typecheck
+    - name: Run unit tests
+      run: npm run test
+    - name: Build the bundle
+      run: npm run build
+    - name: Check the committed bundle is up to date
+      run: git diff --exit-code -- dist
+
+  test:
+    name: Test (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+        - macos-26
+        - macos-26-intel
+        - ubuntu-26.04
+        - ubuntu-26.04-arm
+        - windows-2025
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7.0.1
+      with:
+        persist-credentials: false
+    - name: Setup Grafana Tanka
+      uses: ./
+    - name: Print the Tanka version
+      run: tk --version
