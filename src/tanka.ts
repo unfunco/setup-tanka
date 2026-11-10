@@ -30,6 +30,13 @@ const RELEASE_ASSETS: Readonly<Record<string, string>> = {
   'win32/x64': 'tk-windows-amd64.exe',
 }
 
+export interface Installation {
+  // Whether the executable was found in the tool cache instead of downloaded.
+  cacheHit: boolean
+  // The installed version in X.Y.Z form.
+  version: string
+}
+
 interface Release {
   assets: { digest: string | null; name: string }[]
 }
@@ -37,12 +44,13 @@ interface Release {
 export async function install(
   tankaVersion: string,
   token: string = '',
-): Promise<void> {
+): Promise<Installation> {
   const semanticVersion = formatVersion(tankaVersion)
   const releaseAsset = getReleaseAsset()
 
   let toolPath = tc.find(TOOL_NAME, semanticVersion)
-  if (toolPath) {
+  const cacheHit = toolPath !== ''
+  if (cacheHit) {
     core.info(`Found Grafana Tanka ${semanticVersion} in the tool cache`)
   } else {
     toolPath = await download(semanticVersion, releaseAsset, token)
@@ -50,6 +58,8 @@ export async function install(
 
   core.debug(`Add ${toolPath} to PATH`)
   core.addPath(toolPath)
+
+  return { cacheHit, version: semanticVersion.slice(1) }
 }
 
 async function download(

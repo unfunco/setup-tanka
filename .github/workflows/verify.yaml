@@ -53,9 +53,13 @@ jobs:
       with:
         persist-credentials: false
     - name: Setup Grafana Tanka
+      id: tanka
       uses: ./
-    - name: Print the Tanka version
-      run: tk --version
+    - name: Check the installed version matches the output
+      env:
+        TANKA_VERSION: ${{ steps.tanka.outputs.tanka-version }}
+      run: tk --version 2>&1 | grep --fixed-strings "tk version v${TANKA_VERSION}"
+      shell: bash
     - name: Print the Tanka version from another directory
       run: tk --version
       working-directory: ${{ runner.temp }}

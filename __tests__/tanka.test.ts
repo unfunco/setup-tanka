@@ -157,7 +157,10 @@ describe('GitHub Actions × Grafana Tanka', () => {
   )
 
   it('adds the absolute tool cache directory to PATH', async () => {
-    await tanka.install('0.16.0')
+    await expect(tanka.install('v0.16')).resolves.toEqual({
+      cacheHit: false,
+      version: '0.16.0',
+    })
 
     expect(core.addPath).toHaveBeenCalledExactlyOnceWith(toolPath)
     expect(path.isAbsolute(toolPath)).toBe(true)
@@ -166,7 +169,10 @@ describe('GitHub Actions × Grafana Tanka', () => {
   it('does not download a version that is already cached', async () => {
     vi.mocked(tc.find).mockReturnValue(toolPath)
 
-    await tanka.install('0.16.0')
+    await expect(tanka.install('0.16.0')).resolves.toEqual({
+      cacheHit: true,
+      version: '0.16.0',
+    })
 
     expect(tc.find).toHaveBeenCalledWith('tanka', 'v0.16.0')
     expect(tc.downloadTool).not.toHaveBeenCalled()

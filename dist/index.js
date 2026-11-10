@@ -146,6 +146,13 @@ function issueFileCommand(command, message) {
 	if (!fs.existsSync(filePath)) throw new Error(`Missing file at path: ${filePath}`);
 	fs.appendFileSync(filePath, `${toCommandValue(message)}${os$1.EOL}`, { encoding: "utf8" });
 }
+function prepareKeyValueMessage(key, value) {
+	const delimiter = `ghadelimiter_${crypto.randomUUID()}`;
+	const convertedValue = toCommandValue(value);
+	if (key.includes(delimiter)) throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
+	if (convertedValue.includes(delimiter)) throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
+	return `${key}<<${delimiter}${os$1.EOL}${convertedValue}${os$1.EOL}${delimiter}`;
+}
 // node_modules/@actions/http-client/lib/proxy.js
 function getProxyUrl(reqUrl) {
 	const usingSsl = reqUrl.protocol === "https:";
@@ -16704,6 +16711,17 @@ function getInput(name, options) {
 	return val.trim();
 }
 /**
+* Sets the value of an output.
+*
+* @param     name     name of the output to set
+* @param     value    value to store. Non-string values will be converted to a string via JSON.stringify
+*/
+function setOutput(name, value) {
+	if (process.env["GITHUB_OUTPUT"] || "") return issueFileCommand("OUTPUT", prepareKeyValueMessage(name, value));
+	process.stdout.write(os$1.EOL);
+	issueCommand("set-output", { name }, toCommandValue(value));
+}
+/**
 * Sets the action status to failed.
 * When the action exits it will be with an exit code of 1
 * @param message add error issue message
@@ -18423,10 +18441,15 @@ async function install(tankaVersion, token = "") {
 	const semanticVersion = formatVersion(tankaVersion);
 	const releaseAsset = getReleaseAsset();
 	let toolPath = find(TOOL_NAME, semanticVersion);
-	if (toolPath) info(`Found Grafana Tanka ${semanticVersion} in the tool cache`);
+	const cacheHit = toolPath !== "";
+	if (cacheHit) info(`Found Grafana Tanka ${semanticVersion} in the tool cache`);
 	else toolPath = await download(semanticVersion, releaseAsset, token);
 	debug(`Add ${toolPath} to PATH`);
 	addPath(toolPath);
+	return {
+		cacheHit,
+		version: semanticVersion.slice(1)
+	};
 }
 async function download(semanticVersion, releaseAsset, token) {
 	const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${releaseAsset}`;
@@ -18490,7 +18513,9 @@ function formatVersion(version) {
 // src/main.ts
 async function main() {
 	try {
-		await install(getInput("tanka-version"), getInput("token"));
+		const { cacheHit, version } = await install(getInput("tanka-version"), getInput("token"));
+		setOutput("cache-hit", cacheHit);
+		setOutput("tanka-version", version);
 	} catch (e) {
 		setFailed(e instanceof Error ? e.message : String(e));
 	}
