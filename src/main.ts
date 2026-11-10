@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import * as core from '@actions/core'
-import * as tanka from './tanka'
+import * as tanka from './tanka.ts'
 
 export const main = async (): Promise<void> => {
   try {
