@@ -13,6 +13,7 @@ import * as util from "util";
 import "child_process";
 import "timers";
 import * as stream from "stream";
+import { chmod as chmod$1 } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 // \0rolldown/runtime.js
@@ -16498,8 +16499,26 @@ var __awaiter$8 = function(thisArg, _arguments, P, generator) {
 		step((generator = generator.apply(thisArg, _arguments || [])).next());
 	});
 };
-const { chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink } = fs.promises;
+const { chmod, copyFile: copyFile$1, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink } = fs.promises;
 const IS_WINDOWS$2 = process.platform === "win32";
+/**
+* Custom implementation of readlink to ensure Windows junctions
+* maintain trailing backslash for backward compatibility with Node.js < 24
+*
+* In Node.js 20, Windows junctions (directory symlinks) always returned paths
+* with trailing backslashes. Node.js 24 removed this behavior, which breaks
+* code that relied on this format for path operations.
+*
+* This implementation restores the Node 20 behavior by adding a trailing
+* backslash to all junction results on Windows.
+*/
+function readlink(fsPath) {
+	return __awaiter$8(this, void 0, void 0, function* () {
+		const result = yield fs.promises.readlink(fsPath);
+		if (IS_WINDOWS$2 && !result.endsWith("\\")) return `${result}\\`;
+		return result;
+	});
+}
 fs.constants.O_RDONLY;
 function exists(fsPath) {
 	return __awaiter$8(this, void 0, void 0, function* () {
@@ -16510,11 +16529,6 @@ function exists(fsPath) {
 			throw err;
 		}
 		return true;
-	});
-}
-function isDirectory(fsPath_1) {
-	return __awaiter$8(this, arguments, void 0, function* (fsPath, useStat = false) {
-		return (useStat ? yield stat(fsPath) : yield lstat(fsPath)).isDirectory();
 	});
 }
 // node_modules/@actions/io/lib/io.js
@@ -16546,27 +16560,27 @@ var __awaiter$7 = function(thisArg, _arguments, P, generator) {
 	});
 };
 /**
-* Moves a path.
+* Copies a file or folder.
+* Based off of shelljs - https://github.com/shelljs/shelljs/blob/9237f66c52e5daa40458f94f9565e18e8132f5a6/src/cp.js
 *
 * @param     source    source path
 * @param     dest      destination path
-* @param     options   optional. See MoveOptions.
+* @param     options   optional. See CopyOptions.
 */
-function mv(source_1, dest_1) {
+function cp(source_1, dest_1) {
 	return __awaiter$7(this, arguments, void 0, function* (source, dest, options = {}) {
-		if (yield exists(dest)) {
-			let destExists = true;
-			if (yield isDirectory(dest)) {
-				dest = path$1.join(dest, path$1.basename(source));
-				destExists = yield exists(dest);
-			}
-			if (destExists) {
-				if (options.force == null || options.force) yield rmRF(dest);
-				else throw new Error("Destination already exists");
-			}
+		const { force, recursive, copySourceDirectory } = readCopyOptions(options);
+		const destStat = (yield exists(dest)) ? yield stat(dest) : null;
+		if (destStat && destStat.isFile() && !force) return;
+		const newDest = destStat && destStat.isDirectory() && copySourceDirectory ? path$1.join(dest, path$1.basename(source)) : dest;
+		if (!(yield exists(source))) throw new Error(`no such file or directory: ${source}`);
+		if ((yield stat(source)).isDirectory()) {
+			if (!recursive) throw new Error(`Failed to copy. ${source} is a directory, but tried to copy without recursive flag.`);
+			else yield cpDirRecursive(source, newDest, 0, force);
+		} else {
+			if (path$1.relative(source, newDest) === "") throw new Error(`'${newDest}' and '${source}' are the same file`);
+			yield copyFile(source, newDest, force);
 		}
-		yield mkdirP(path$1.dirname(dest));
-		yield rename(source, dest);
 	});
 }
 /**
@@ -16602,6 +16616,45 @@ function mkdirP(fsPath) {
 	return __awaiter$7(this, void 0, void 0, function* () {
 		ok(fsPath, "a path argument must be provided");
 		yield mkdir(fsPath, { recursive: true });
+	});
+}
+function readCopyOptions(options) {
+	return {
+		force: options.force == null ? true : options.force,
+		recursive: Boolean(options.recursive),
+		copySourceDirectory: options.copySourceDirectory == null ? true : Boolean(options.copySourceDirectory)
+	};
+}
+function cpDirRecursive(sourceDir, destDir, currentDepth, force) {
+	return __awaiter$7(this, void 0, void 0, function* () {
+		if (currentDepth >= 255) return;
+		currentDepth++;
+		yield mkdirP(destDir);
+		const files = yield readdir(sourceDir);
+		for (const fileName of files) {
+			const srcFile = `${sourceDir}/${fileName}`;
+			const destFile = `${destDir}/${fileName}`;
+			if ((yield lstat(srcFile)).isDirectory()) yield cpDirRecursive(srcFile, destFile, currentDepth, force);
+			else yield copyFile(srcFile, destFile, force);
+		}
+		yield chmod(destDir, (yield stat(sourceDir)).mode);
+	});
+}
+function copyFile(srcFile, destFile, force) {
+	return __awaiter$7(this, void 0, void 0, function* () {
+		if ((yield lstat(srcFile)).isSymbolicLink()) {
+			try {
+				yield lstat(destFile);
+				yield unlink(destFile);
+			} catch (e) {
+				if (e.code === "EPERM") {
+					yield chmod(destFile, "0666");
+					yield unlink(destFile);
+				}
+			}
+			const symlinkFull = yield readlink(srcFile);
+			yield symlink(symlinkFull, destFile, IS_WINDOWS$2 ? "junction" : null);
+		} else if (!(yield exists(destFile)) || force) yield copyFile$1(srcFile, destFile);
 	});
 }
 process.platform;
@@ -18195,6 +18248,134 @@ function downloadToolAttempt(url, dest, auth, headers) {
 	});
 }
 /**
+* Caches a downloaded file (GUID) and installs it
+* into the tool cache with a given targetName
+*
+* @param sourceFile    the file to cache into tools.  Typically a result of downloadTool which is a guid.
+* @param targetFile    the name of the file name in the tools directory
+* @param tool          tool name
+* @param version       version of the tool.  semver format
+* @param arch          architecture of the tool.  Optional.  Defaults to machine architecture
+*/
+function cacheFile(sourceFile, targetFile, tool, version, arch) {
+	return __awaiter(this, void 0, void 0, function* () {
+		version = import_semver.clean(version) || version;
+		arch = arch || os$1.arch();
+		debug(`Caching tool ${tool} ${version} ${arch}`);
+		debug(`source file: ${sourceFile}`);
+		if (!fs.statSync(sourceFile).isFile()) throw new Error("sourceFile is not a file");
+		const destFolder = yield _createToolPath(tool, version, arch);
+		const destPath = path$1.join(destFolder, targetFile);
+		debug(`destination file ${destPath}`);
+		yield cp(sourceFile, destPath);
+		_completeToolPath(tool, version, arch);
+		return destFolder;
+	});
+}
+/**
+* Finds the path to a tool version in the local installed tool cache
+*
+* @param toolName      name of the tool
+* @param versionSpec   version of the tool
+* @param arch          optional arch.  defaults to arch of computer
+*/
+function find(toolName, versionSpec, arch) {
+	if (!toolName) throw new Error("toolName parameter is required");
+	if (!versionSpec) throw new Error("versionSpec parameter is required");
+	arch = arch || os$1.arch();
+	if (!isExplicitVersion(versionSpec)) versionSpec = evaluateVersions(findAllVersions(toolName, arch), versionSpec);
+	let toolPath = "";
+	if (versionSpec) {
+		versionSpec = import_semver.clean(versionSpec) || "";
+		const cachePath = path$1.join(_getCacheDirectory(), toolName, versionSpec, arch);
+		debug(`checking cache: ${cachePath}`);
+		if (fs.existsSync(cachePath) && fs.existsSync(`${cachePath}.complete`)) {
+			debug(`Found tool in cache ${toolName} ${versionSpec} ${arch}`);
+			toolPath = cachePath;
+		} else debug("not found");
+	}
+	return toolPath;
+}
+/**
+* Finds the paths to all versions of a tool that are installed in the local tool cache
+*
+* @param toolName  name of the tool
+* @param arch      optional arch.  defaults to arch of computer
+*/
+function findAllVersions(toolName, arch) {
+	const versions = [];
+	arch = arch || os$1.arch();
+	const toolPath = path$1.join(_getCacheDirectory(), toolName);
+	if (fs.existsSync(toolPath)) {
+		const children = fs.readdirSync(toolPath);
+		for (const child of children) if (isExplicitVersion(child)) {
+			const fullPath = path$1.join(toolPath, child, arch || "");
+			if (fs.existsSync(fullPath) && fs.existsSync(`${fullPath}.complete`)) versions.push(child);
+		}
+	}
+	return versions;
+}
+function _createToolPath(tool, version, arch) {
+	return __awaiter(this, void 0, void 0, function* () {
+		const folderPath = path$1.join(_getCacheDirectory(), tool, import_semver.clean(version) || version, arch || "");
+		debug(`destination ${folderPath}`);
+		const markerPath = `${folderPath}.complete`;
+		yield rmRF(folderPath);
+		yield rmRF(markerPath);
+		yield mkdirP(folderPath);
+		return folderPath;
+	});
+}
+function _completeToolPath(tool, version, arch) {
+	const markerPath = `${path$1.join(_getCacheDirectory(), tool, import_semver.clean(version) || version, arch || "")}.complete`;
+	fs.writeFileSync(markerPath, "");
+	debug("finished caching tool");
+}
+/**
+* Check if version string is explicit
+*
+* @param versionSpec      version string to check
+*/
+function isExplicitVersion(versionSpec) {
+	const c = import_semver.clean(versionSpec) || "";
+	debug(`isExplicit: ${c}`);
+	const valid = import_semver.valid(c) != null;
+	debug(`explicit? ${valid}`);
+	return valid;
+}
+/**
+* Get the highest satisfiying semantic version in `versions` which satisfies `versionSpec`
+*
+* @param versions        array of versions to evaluate
+* @param versionSpec     semantic version spec to satisfy
+*/
+function evaluateVersions(versions, versionSpec) {
+	let version = "";
+	debug(`evaluating ${versions.length} versions`);
+	versions = versions.sort((a, b) => {
+		if (import_semver.gt(a, b)) return 1;
+		return -1;
+	});
+	for (let i = versions.length - 1; i >= 0; i--) {
+		const potential = versions[i];
+		if (import_semver.satisfies(potential, versionSpec)) {
+			version = potential;
+			break;
+		}
+	}
+	if (version) debug(`matched: ${version}`);
+	else debug("match not found");
+	return version;
+}
+/**
+* Gets RUNNER_TOOL_CACHE
+*/
+function _getCacheDirectory() {
+	const cacheDirectory = process.env["RUNNER_TOOL_CACHE"] || "";
+	ok(cacheDirectory, "Expected RUNNER_TOOL_CACHE to be defined");
+	return cacheDirectory;
+}
+/**
 * Gets RUNNER_TEMP
 */
 function _getTempDirectory() {
@@ -18210,19 +18391,25 @@ function _getGlobal(key, defaultValue) {
 	return value !== void 0 ? value : defaultValue;
 }
 // src/tanka.ts
+const TOOL_NAME = "tanka";
 async function install(tankaVersion) {
 	const semanticVersion = formatVersion(tankaVersion);
+	let toolPath = find(TOOL_NAME, semanticVersion);
+	if (toolPath) info(`Found Grafana Tanka ${semanticVersion} in the tool cache`);
+	else toolPath = await download(semanticVersion);
+	debug(`Add ${toolPath} to PATH`);
+	addPath(toolPath);
+}
+async function download(semanticVersion) {
 	const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${getExeDownloadName()}`;
 	info(`Download Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
-	const tkDownload = await downloadTool(tkDownloadUrl, void 0);
-	const tkDownloadPath = path.basename(tkDownload);
-	const tk = path.join(tkDownloadPath, getExeName());
-	debug(`Move ${tkDownload} to ${tk}`);
-	await mv(tkDownload, tk);
+	const tkDownload = await downloadTool(tkDownloadUrl);
+	const exeName = getExeName();
+	const toolPath = await cacheFile(tkDownload, exeName, TOOL_NAME, semanticVersion);
+	const tk = path.join(toolPath, exeName);
 	debug(`Make ${tk} executable`);
-	await chmod(tk, 493);
-	debug(`Add ${tkDownloadPath} to PATH`);
-	addPath(tkDownloadPath);
+	await chmod$1(tk, 493);
+	return toolPath;
 }
 function getExeName() {
 	if (os.platform().toString() === "win32") return "tk.exe";
