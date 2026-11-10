@@ -10,13 +10,14 @@ vi.mock('@actions/core')
 vi.mock('../src/tanka.ts')
 
 describe('main', () => {
-  it('installs the requested version', async () => {
-    vi.mocked(core.getInput).mockReturnValue('0.36.3')
+  it('installs the requested version with the token', async () => {
+    vi.mocked(core.getInput).mockImplementation(
+      (name) => ({ 'tanka-version': '0.36.3', token: 'token' })[name] ?? '',
+    )
 
     await main()
 
-    expect(core.getInput).toHaveBeenCalledWith('tanka-version')
-    expect(tanka.install).toHaveBeenCalledExactlyOnceWith('0.36.3')
+    expect(tanka.install).toHaveBeenCalledExactlyOnceWith('0.36.3', 'token')
     expect(core.setFailed).not.toHaveBeenCalled()
   })
 

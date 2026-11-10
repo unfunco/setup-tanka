@@ -10,12 +10,15 @@ import * as https from "https";
 import * as events from "events";
 import { ok } from "assert";
 import * as util from "util";
+import { createHash } from "node:crypto";
 import "child_process";
 import "timers";
 import * as stream from "stream";
 import { chmod as chmod$1 } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { createReadStream } from "node:fs";
+import { pipeline } from "node:stream/promises";
 // \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -16725,6 +16728,14 @@ function error(message, properties = {}) {
 	issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 /**
+* Adds a warning issue
+* @param message warning issue message. Errors will be converted to string via toString()
+* @param properties optional properties to add to the annotation.
+*/
+function warning(message, properties = {}) {
+	issueCommand("warning", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+/**
 * Writes info to log with console.log.
 * @param message info message
 */
@@ -18390,6 +18401,12 @@ function _getGlobal(key, defaultValue) {
 	const value = global[key];
 	return value !== void 0 ? value : defaultValue;
 }
+// src/digest.ts
+async function sha256(file) {
+	const hash = createHash("sha256");
+	await pipeline(createReadStream(file), hash);
+	return `sha256:${hash.digest("hex")}`;
+}
 // src/tanka.ts
 const TOOL_NAME = "tanka";
 const MINIMUM_VERSION = "0.16.0";
@@ -18402,16 +18419,16 @@ const RELEASE_ASSETS = {
 	"win32/arm64": "tk-windows-amd64.exe",
 	"win32/x64": "tk-windows-amd64.exe"
 };
-async function install(tankaVersion) {
+async function install(tankaVersion, token = "") {
 	const semanticVersion = formatVersion(tankaVersion);
 	const releaseAsset = getReleaseAsset();
 	let toolPath = find(TOOL_NAME, semanticVersion);
 	if (toolPath) info(`Found Grafana Tanka ${semanticVersion} in the tool cache`);
-	else toolPath = await download(semanticVersion, releaseAsset);
+	else toolPath = await download(semanticVersion, releaseAsset, token);
 	debug(`Add ${toolPath} to PATH`);
 	addPath(toolPath);
 }
-async function download(semanticVersion, releaseAsset) {
+async function download(semanticVersion, releaseAsset, token) {
 	const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${releaseAsset}`;
 	info(`Download Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
 	let tkDownload;
@@ -18421,12 +18438,38 @@ async function download(semanticVersion, releaseAsset) {
 		if (e instanceof HTTPError && e.httpStatusCode === 404) throw new Error(`Grafana Tanka ${semanticVersion} has no release asset named ${releaseAsset}, check that the version exists and supports this platform`, { cause: e });
 		throw e;
 	}
+	await verify(tkDownload, semanticVersion, releaseAsset, token);
 	const exeName = getExeName();
 	const toolPath = await cacheFile(tkDownload, exeName, TOOL_NAME, semanticVersion);
 	const tk = path.join(toolPath, exeName);
 	debug(`Make ${tk} executable`);
 	await chmod$1(tk, 493);
 	return toolPath;
+}
+async function verify(tkDownload, semanticVersion, releaseAsset, token) {
+	let expected;
+	try {
+		expected = await getReleaseAssetDigest(semanticVersion, releaseAsset, token);
+	} catch (e) {
+		warning(`Could not read the digest of ${releaseAsset} from the Grafana Tanka ${semanticVersion} release, the download has not been verified: ${e instanceof Error ? e.message : String(e)}`);
+		return;
+	}
+	if (!expected?.startsWith("sha256:")) {
+		info(`GitHub has no SHA-256 digest for ${releaseAsset} in the Grafana Tanka ${semanticVersion} release, the download has not been verified`);
+		return;
+	}
+	const actual = await sha256(tkDownload);
+	if (actual !== expected) throw new Error(`The digest of ${releaseAsset} does not match the Grafana Tanka ${semanticVersion} release, expected ${expected} but downloaded ${actual}`);
+	info(`Verified ${releaseAsset} against ${expected}`);
+}
+async function getReleaseAssetDigest(semanticVersion, releaseAsset, token) {
+	const { result, statusCode } = await new HttpClient("unfunco/setup-tanka").getJson(`https://api.github.com/repos/grafana/tanka/releases/tags/${semanticVersion}`, {
+		accept: "application/vnd.github+json",
+		"x-github-api-version": "2022-11-28",
+		...token && { authorization: `Bearer ${token}` }
+	});
+	if (!result) throw new Error(`Unexpected HTTP response: ${statusCode}`);
+	return result.assets.find(({ name }) => name === releaseAsset)?.digest;
 }
 function getExeName() {
 	return os.platform() === "win32" ? "tk.exe" : "tk";
@@ -18447,7 +18490,7 @@ function formatVersion(version) {
 // src/main.ts
 async function main() {
 	try {
-		await install(getInput("tanka-version"));
+		await install(getInput("tanka-version"), getInput("token"));
 	} catch (e) {
 		setFailed(e instanceof Error ? e.message : String(e));
 	}

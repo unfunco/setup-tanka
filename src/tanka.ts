@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: MIT
 
 import * as core from '@actions/core'
+import { HttpClient } from '@actions/http-client'
 import * as tc from '@actions/tool-cache'
 import { chmod } from 'node:fs/promises'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import * as semver from 'semver'
+import { sha256 } from './digest.ts'
 
 const TOOL_NAME = 'tanka'
 
@@ -28,7 +30,14 @@ const RELEASE_ASSETS: Readonly<Record<string, string>> = {
   'win32/x64': 'tk-windows-amd64.exe',
 }
 
-export async function install(tankaVersion: string): Promise<void> {
+interface Release {
+  assets: { digest: string | null; name: string }[]
+}
+
+export async function install(
+  tankaVersion: string,
+  token: string = '',
+): Promise<void> {
   const semanticVersion = formatVersion(tankaVersion)
   const releaseAsset = getReleaseAsset()
 
@@ -36,7 +45,7 @@ export async function install(tankaVersion: string): Promise<void> {
   if (toolPath) {
     core.info(`Found Grafana Tanka ${semanticVersion} in the tool cache`)
   } else {
-    toolPath = await download(semanticVersion, releaseAsset)
+    toolPath = await download(semanticVersion, releaseAsset, token)
   }
 
   core.debug(`Add ${toolPath} to PATH`)
@@ -46,6 +55,7 @@ export async function install(tankaVersion: string): Promise<void> {
 async function download(
   semanticVersion: string,
   releaseAsset: string,
+  token: string,
 ): Promise<string> {
   const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${releaseAsset}`
 
@@ -64,6 +74,8 @@ async function download(
     throw e
   }
 
+  await verify(tkDownload, semanticVersion, releaseAsset, token)
+
   const exeName = getExeName()
   const toolPath = await tc.cacheFile(
     tkDownload,
@@ -77,6 +89,68 @@ async function download(
   await chmod(tk, 0o755)
 
   return toolPath
+}
+
+// Compare the download with the digest that GitHub computed when the asset
+// was uploaded to the release. A download that does not match is never
+// installed. Releases published before GitHub recorded digests, and failures
+// to read the release, leave the download unverified rather than failing.
+async function verify(
+  tkDownload: string,
+  semanticVersion: string,
+  releaseAsset: string,
+  token: string,
+): Promise<void> {
+  let expected: string | null | undefined
+  try {
+    expected = await getReleaseAssetDigest(semanticVersion, releaseAsset, token)
+  } catch (e: unknown) {
+    const reason = e instanceof Error ? e.message : String(e)
+    core.warning(
+      `Could not read the digest of ${releaseAsset} from the Grafana Tanka ${semanticVersion} release, the download has not been verified: ${reason}`,
+    )
+
+    return
+  }
+
+  if (!expected?.startsWith('sha256:')) {
+    core.info(
+      `GitHub has no SHA-256 digest for ${releaseAsset} in the Grafana Tanka ${semanticVersion} release, the download has not been verified`,
+    )
+
+    return
+  }
+
+  const actual = await sha256(tkDownload)
+  if (actual !== expected) {
+    throw new Error(
+      `The digest of ${releaseAsset} does not match the Grafana Tanka ${semanticVersion} release, expected ${expected} but downloaded ${actual}`,
+    )
+  }
+
+  core.info(`Verified ${releaseAsset} against ${expected}`)
+}
+
+async function getReleaseAssetDigest(
+  semanticVersion: string,
+  releaseAsset: string,
+  token: string,
+): Promise<string | null | undefined> {
+  const http = new HttpClient('unfunco/setup-tanka')
+  const { result, statusCode } = await http.getJson<Release>(
+    `https://api.github.com/repos/grafana/tanka/releases/tags/${semanticVersion}`,
+    {
+      accept: 'application/vnd.github+json',
+      'x-github-api-version': '2022-11-28',
+      ...(token && { authorization: `Bearer ${token}` }),
+    },
+  )
+
+  if (!result) {
+    throw new Error(`Unexpected HTTP response: ${statusCode}`)
+  }
+
+  return result.assets.find(({ name }) => name === releaseAsset)?.digest
 }
 
 function getExeName(): string {
