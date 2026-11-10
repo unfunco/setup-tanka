@@ -26,11 +26,40 @@ describe('GitHub Actions × Grafana Tanka', () => {
     vi.mocked(tc.cacheFile).mockResolvedValue(toolPath)
   })
 
-  it('does not install versions prior to 0.16.0', async () => {
-    await expect(tanka.install('0.15.0')).rejects.toThrow(
-      'Only versions >= 0.16.0 are supported',
+  it.each([
+    ['0.16', 'v0.16.0'],
+    ['v0.16', 'v0.16.0'],
+    ['0.16.0', 'v0.16.0'],
+    ['v0.16.0', 'v0.16.0'],
+    [' 0.36.3 ', 'v0.36.3'],
+    ['0.20-rc1', 'v0.20.0-rc1'],
+    ['v0.36.3-rc.1-hotfix', 'v0.36.3-rc.1-hotfix'],
+  ])('installs %j as %s', async (version, tag) => {
+    await tanka.install(version)
+
+    expect(tc.downloadTool).toHaveBeenCalledWith(
+      `https://github.com/grafana/tanka/releases/download/${tag}/tk-linux-amd64`,
     )
   })
+
+  it.each(['', '1', 'latest', '0.36.x', '1.2.3.4', 'v0.36.3/../../x'])(
+    'does not install the invalid version %j',
+    async (version) => {
+      await expect(tanka.install(version)).rejects.toThrow(
+        `"${version}" is not a valid version`,
+      )
+      expect(tc.downloadTool).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each(['0.15.0', 'v0.15.9', '0.16.0-rc1'])(
+    'does not install %s, which is prior to 0.16.0',
+    async (version) => {
+      await expect(tanka.install(version)).rejects.toThrow(
+        'Only versions >= 0.16.0 are supported',
+      )
+    },
+  )
 
   it.each([
     ['linux', 'x64', 'tk-linux-amd64'],
@@ -39,6 +68,7 @@ describe('GitHub Actions × Grafana Tanka', () => {
     ['darwin', 'x64', 'tk-darwin-amd64'],
     ['darwin', 'arm64', 'tk-darwin-arm64'],
     ['win32', 'x64', 'tk-windows-amd64.exe'],
+    ['win32', 'arm64', 'tk-windows-amd64.exe'],
   ] as const)(
     'downloads the correct executable for %s/%s',
     async (platform, arch, exe) => {
@@ -52,6 +82,43 @@ describe('GitHub Actions × Grafana Tanka', () => {
       )
     },
   )
+
+  it.each([
+    ['linux', 'ia32'],
+    ['darwin', 'arm'],
+    ['win32', 'ia32'],
+    ['freebsd', 'x64'],
+  ] as const)(
+    'does not install on the unsupported %s/%s',
+    async (platform, arch) => {
+      vi.mocked(os.arch).mockReturnValue(arch)
+      vi.mocked(os.platform).mockReturnValue(platform)
+
+      await expect(tanka.install('0.16.0')).rejects.toThrow(
+        `Grafana Tanka is not available for ${platform}/${arch}`,
+      )
+      expect(tc.downloadTool).not.toHaveBeenCalled()
+    },
+  )
+
+  it('explains a release asset that does not exist', async () => {
+    vi.mocked(os.arch).mockReturnValue('arm64')
+    vi.mocked(os.platform).mockReturnValue('darwin')
+    vi.mocked(tc.downloadTool).mockRejectedValue(
+      Object.assign(new tc.HTTPError(404), { httpStatusCode: 404 }),
+    )
+
+    await expect(tanka.install('0.16.0')).rejects.toThrow(
+      'Grafana Tanka v0.16.0 has no release asset named tk-darwin-arm64',
+    )
+  })
+
+  it('does not disguise other download failures', async () => {
+    const error = Object.assign(new tc.HTTPError(503), { httpStatusCode: 503 })
+    vi.mocked(tc.downloadTool).mockRejectedValue(error)
+
+    await expect(tanka.install('0.16.0')).rejects.toBe(error)
+  })
 
   it.each([
     ['linux', 'tk'],

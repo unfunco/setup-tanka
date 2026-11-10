@@ -45,6 +45,7 @@ jobs:
         - macos-26-intel
         - ubuntu-26.04
         - ubuntu-26.04-arm
+        - windows-11-arm
         - windows-2025
     steps:
     - name: Checkout code

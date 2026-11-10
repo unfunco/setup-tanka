@@ -18392,18 +18392,35 @@ function _getGlobal(key, defaultValue) {
 }
 // src/tanka.ts
 const TOOL_NAME = "tanka";
+const MINIMUM_VERSION = "0.16.0";
+const RELEASE_ASSETS = {
+	"darwin/arm64": "tk-darwin-arm64",
+	"darwin/x64": "tk-darwin-amd64",
+	"linux/arm": "tk-linux-arm",
+	"linux/arm64": "tk-linux-arm64",
+	"linux/x64": "tk-linux-amd64",
+	"win32/arm64": "tk-windows-amd64.exe",
+	"win32/x64": "tk-windows-amd64.exe"
+};
 async function install(tankaVersion) {
 	const semanticVersion = formatVersion(tankaVersion);
+	const releaseAsset = getReleaseAsset();
 	let toolPath = find(TOOL_NAME, semanticVersion);
 	if (toolPath) info(`Found Grafana Tanka ${semanticVersion} in the tool cache`);
-	else toolPath = await download(semanticVersion);
+	else toolPath = await download(semanticVersion, releaseAsset);
 	debug(`Add ${toolPath} to PATH`);
 	addPath(toolPath);
 }
-async function download(semanticVersion) {
-	const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${getExeDownloadName()}`;
+async function download(semanticVersion, releaseAsset) {
+	const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${releaseAsset}`;
 	info(`Download Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`);
-	const tkDownload = await downloadTool(tkDownloadUrl);
+	let tkDownload;
+	try {
+		tkDownload = await downloadTool(tkDownloadUrl);
+	} catch (e) {
+		if (e instanceof HTTPError && e.httpStatusCode === 404) throw new Error(`Grafana Tanka ${semanticVersion} has no release asset named ${releaseAsset}, check that the version exists and supports this platform`, { cause: e });
+		throw e;
+	}
 	const exeName = getExeName();
 	const toolPath = await cacheFile(tkDownload, exeName, TOOL_NAME, semanticVersion);
 	const tk = path.join(toolPath, exeName);
@@ -18412,37 +18429,29 @@ async function download(semanticVersion) {
 	return toolPath;
 }
 function getExeName() {
-	if (os.platform().toString() === "win32") return "tk.exe";
-	return "tk";
+	return os.platform() === "win32" ? "tk.exe" : "tk";
 }
-function getExeDownloadName() {
-	let arch = os.arch();
-	let ext = "";
-	let platform = os.platform().toString();
-	if (arch === "x64") arch = "amd64";
-	if (platform === "win32") {
-		platform = "windows";
-		ext = ".exe";
-	}
-	return `tk-${platform}-${arch}${ext}`;
+function getReleaseAsset() {
+	const target = `${os.platform()}/${os.arch()}`;
+	const releaseAsset = RELEASE_ASSETS[target];
+	if (!releaseAsset) throw new Error(`Grafana Tanka is not available for ${target}`);
+	return releaseAsset;
 }
 function formatVersion(version) {
-	const parts = version.split("-");
-	let versionPart = parts[0] ?? "";
-	const preReleasePart = parts.length > 1 ? `-${parts[1]}` : "";
-	if (versionPart.split(".").length === 2) versionPart += ".0";
-	if (import_semver.lt(versionPart, "0.16.0")) throw new Error("Only versions >= 0.16.0 are supported");
-	if ("v" !== versionPart.substring(0, 1)) versionPart = `v${versionPart}`;
-	return `${versionPart}${preReleasePart}`;
+	const candidate = version.replace(/^(\s*v?\d+\.\d+)(?=-|\s*$)/, "$1.0");
+	const semanticVersion = import_semver.parse(candidate);
+	if (!semanticVersion) throw new Error(`"${version}" is not a valid version, expected a version such as ${MINIMUM_VERSION}`);
+	if (import_semver.lt(semanticVersion, MINIMUM_VERSION)) throw new Error(`Only versions >= ${MINIMUM_VERSION} are supported`);
+	return `v${semanticVersion.version}`;
 }
 // src/main.ts
-const main = async () => {
+async function main() {
 	try {
 		await install(getInput("tanka-version"));
 	} catch (e) {
-		if (e instanceof Error) setFailed(e.message);
+		setFailed(e instanceof Error ? e.message : String(e));
 	}
-};
+}
 // src/index.ts
 await main();
 export {};
