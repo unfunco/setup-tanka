@@ -6,15 +6,13 @@
     "semver": "7.8.5"
   },
   "devDependencies": {
-    "@types/jest": "30.0.0",
     "@types/node": "26.6.6",
     "@types/semver": "7.8.0",
     "@vercel/ncc": "0.45.0",
-    "jest": "30.5.2",
-    "jest-circus": "30.5.2",
+    "@vitest/coverage-v8": "5.1.0",
     "prettier": "3.9.10",
-    "ts-jest": "29.4.15",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
   },
   "engines": {
     "node": "24",
@@ -38,6 +36,6 @@
     "build": "tsc && ncc build lib/setup-tanka.js -o dist",
     "fmt:check": "prettier --check .",
     "fmt:fix": "prettier --write .",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage"
+    "test": "vitest run --coverage"
   }
 }
