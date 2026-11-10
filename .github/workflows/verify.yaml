@@ -55,3 +55,6 @@ jobs:
       uses: ./
     - name: Print the Tanka version
       run: tk --version
+    - name: Print the Tanka version from another directory
+      run: tk --version
+      working-directory: ${{ runner.temp }}

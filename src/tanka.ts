@@ -2,32 +2,48 @@
 // SPDX-License-Identifier: MIT
 
 import * as core from '@actions/core'
-import * as io from '@actions/io'
-import * as ioutil from '@actions/io/lib/io-util'
 import * as tc from '@actions/tool-cache'
+import { chmod } from 'node:fs/promises'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import * as semver from 'semver'
 
+const TOOL_NAME = 'tanka'
+
 export async function install(tankaVersion: string): Promise<void> {
   const semanticVersion = formatVersion(tankaVersion)
+
+  let toolPath = tc.find(TOOL_NAME, semanticVersion)
+  if (toolPath) {
+    core.info(`Found Grafana Tanka ${semanticVersion} in the tool cache`)
+  } else {
+    toolPath = await download(semanticVersion)
+  }
+
+  core.debug(`Add ${toolPath} to PATH`)
+  core.addPath(toolPath)
+}
+
+async function download(semanticVersion: string): Promise<string> {
   const exeDownloadName = getExeDownloadName()
   const tkDownloadUrl = `https://github.com/grafana/tanka/releases/download/${semanticVersion}/${exeDownloadName}`
 
   core.info(`Download Grafana Tanka ${semanticVersion} from ${tkDownloadUrl}`)
-  const tkDownload = await tc.downloadTool(tkDownloadUrl, undefined)
+  const tkDownload = await tc.downloadTool(tkDownloadUrl)
 
-  const tkDownloadPath = path.basename(tkDownload)
-  const tk = path.join(tkDownloadPath, getExeName())
+  const exeName = getExeName()
+  const toolPath = await tc.cacheFile(
+    tkDownload,
+    exeName,
+    TOOL_NAME,
+    semanticVersion,
+  )
 
-  core.debug(`Move ${tkDownload} to ${tk}`)
-  await io.mv(tkDownload, tk)
-
+  const tk = path.join(toolPath, exeName)
   core.debug(`Make ${tk} executable`)
-  await ioutil.chmod(tk, 0o755)
+  await chmod(tk, 0o755)
 
-  core.debug(`Add ${tkDownloadPath} to PATH`)
-  core.addPath(tkDownloadPath)
+  return toolPath
 }
 
 function getExeName(): string {
