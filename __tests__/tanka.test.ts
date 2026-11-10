@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: MIT
 
 import * as tc from '@actions/tool-cache'
-import * as os from 'os'
+import * as os from 'node:os'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import * as tanka from '../src/tanka'
+import * as tanka from '../src/tanka.ts'
 
 vi.mock('@actions/core')
 vi.mock('@actions/io')
 vi.mock('@actions/io/lib/io-util')
 vi.mock('@actions/tool-cache')
-vi.mock('os')
+vi.mock('node:os')
 
 describe('GitHub Actions × Grafana Tanka', () => {
   beforeEach(() => {
@@ -26,11 +26,11 @@ describe('GitHub Actions × Grafana Tanka', () => {
   })
 
   it.each([
-    ['linux', 'amd64', 'tk-linux-amd64'],
+    ['linux', 'x64', 'tk-linux-amd64'],
     ['linux', 'arm', 'tk-linux-arm'],
     ['linux', 'arm64', 'tk-linux-arm64'],
+    ['darwin', 'x64', 'tk-darwin-amd64'],
     ['darwin', 'arm64', 'tk-darwin-arm64'],
-    ['win32', 'amd64', 'tk-windows-amd64.exe'],
     ['win32', 'x64', 'tk-windows-amd64.exe'],
   ] as const)(
     'installs the correct executable for %s/%s',

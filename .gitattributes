@@ -1,3 +1,3 @@
 * text eol=lf
-/dist/index.js -diff
+/dist/** -diff linguist-generated
 package-lock.json -diff

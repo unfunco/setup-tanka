@@ -5,9 +5,9 @@ import * as core from '@actions/core'
 import * as io from '@actions/io'
 import * as ioutil from '@actions/io/lib/io-util'
 import * as tc from '@actions/tool-cache'
+import * as os from 'node:os'
+import * as path from 'node:path'
 import * as semver from 'semver'
-import path from 'path'
-import * as os from 'os'
 
 export async function install(tankaVersion: string): Promise<void> {
   const semanticVersion = formatVersion(tankaVersion)
@@ -56,12 +56,12 @@ function getExeDownloadName(): string {
 }
 
 function formatVersion(version: string): string {
-  let parts: string[] = version.split('-')
-  let versionPart: string = parts[0]
-  let preReleasePart: string = parts.length > 1 ? `-${parts[1]}` : ''
+  const parts: string[] = version.split('-')
+  let versionPart: string = parts[0] ?? ''
+  const preReleasePart: string = parts.length > 1 ? `-${parts[1]}` : ''
 
   // Convert X.Y to X.Y.0
-  let versionParts: string[] = versionPart.split('.')
+  const versionParts: string[] = versionPart.split('.')
   if (versionParts.length === 2) {
     versionPart += '.0'
   }
