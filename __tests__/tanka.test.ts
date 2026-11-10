@@ -2,20 +2,33 @@
 // SPDX-License-Identifier: MIT
 
 import * as core from '@actions/core'
+import { HttpClient } from '@actions/http-client'
 import * as tc from '@actions/tool-cache'
 import { chmod } from 'node:fs/promises'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { sha256 } from '../src/digest.ts'
 import * as tanka from '../src/tanka.ts'
 
 vi.mock('@actions/core')
+vi.mock('@actions/http-client')
 vi.mock('@actions/tool-cache')
+vi.mock('../src/digest.ts')
 vi.mock('node:fs/promises')
 vi.mock('node:os')
 
 const downloadPath = path.resolve('/runner/temp/download')
 const toolPath = path.resolve('/runner/tool-cache/tanka/0.16.0/x64')
+const digest = `sha256:${'a'.repeat(64)}`
+
+function mockRelease(assets: { digest: string | null; name: string }[]): void {
+  vi.mocked(HttpClient.prototype.getJson).mockResolvedValue({
+    headers: {},
+    result: { assets },
+    statusCode: 200,
+  })
+}
 
 describe('GitHub Actions × Grafana Tanka', () => {
   beforeEach(() => {
@@ -24,6 +37,8 @@ describe('GitHub Actions × Grafana Tanka', () => {
     vi.mocked(tc.find).mockReturnValue('')
     vi.mocked(tc.downloadTool).mockResolvedValue(downloadPath)
     vi.mocked(tc.cacheFile).mockResolvedValue(toolPath)
+    vi.mocked(sha256).mockResolvedValue(digest)
+    mockRelease([{ digest, name: 'tk-linux-amd64' }])
   })
 
   it.each([
@@ -156,6 +171,91 @@ describe('GitHub Actions × Grafana Tanka', () => {
     expect(tc.find).toHaveBeenCalledWith('tanka', 'v0.16.0')
     expect(tc.downloadTool).not.toHaveBeenCalled()
     expect(tc.cacheFile).not.toHaveBeenCalled()
+    expect(HttpClient.prototype.getJson).not.toHaveBeenCalled()
     expect(core.addPath).toHaveBeenCalledExactlyOnceWith(toolPath)
+  })
+
+  describe('verifying the download', () => {
+    const release =
+      'https://api.github.com/repos/grafana/tanka/releases/tags/v0.36.3'
+
+    it('installs a download that matches the release asset', async () => {
+      await tanka.install('0.36.3', 'token')
+
+      expect(sha256).toHaveBeenCalledExactlyOnceWith(downloadPath)
+      expect(HttpClient.prototype.getJson).toHaveBeenCalledExactlyOnceWith(
+        release,
+        expect.objectContaining({ authorization: 'Bearer token' }),
+      )
+      expect(core.info).toHaveBeenCalledWith(
+        `Verified tk-linux-amd64 against ${digest}`,
+      )
+      expect(core.addPath).toHaveBeenCalledExactlyOnceWith(toolPath)
+    })
+
+    it('does not send an authorization header without a token', async () => {
+      await tanka.install('0.36.3')
+
+      expect(HttpClient.prototype.getJson).toHaveBeenCalledExactlyOnceWith(
+        release,
+        expect.not.objectContaining({ authorization: expect.anything() }),
+      )
+    })
+
+    it('does not install a download that does not match', async () => {
+      vi.mocked(sha256).mockResolvedValue(`sha256:${'b'.repeat(64)}`)
+
+      await expect(tanka.install('0.36.3')).rejects.toThrow(
+        `expected ${digest} but downloaded sha256:${'b'.repeat(64)}`,
+      )
+      expect(tc.cacheFile).not.toHaveBeenCalled()
+      expect(core.addPath).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      ['has no digest', [{ digest: null, name: 'tk-linux-amd64' }]],
+      ['has an unknown digest', [{ digest: 'md5:0', name: 'tk-linux-amd64' }]],
+      ['is not listed', [{ digest, name: 'tk-darwin-arm64' }]],
+    ])('installs without verifying when the asset %s', async (_, assets) => {
+      mockRelease(assets)
+
+      await tanka.install('0.36.3')
+
+      expect(sha256).not.toHaveBeenCalled()
+      expect(core.info).toHaveBeenCalledWith(
+        expect.stringContaining('the download has not been verified'),
+      )
+      expect(core.addPath).toHaveBeenCalledExactlyOnceWith(toolPath)
+    })
+
+    it('warns and installs when the release cannot be read', async () => {
+      vi.mocked(HttpClient.prototype.getJson).mockRejectedValue(
+        new Error('API rate limit exceeded'),
+      )
+
+      await tanka.install('0.36.3')
+
+      expect(core.warning).toHaveBeenCalledExactlyOnceWith(
+        expect.stringContaining(
+          'the download has not been verified: API rate limit exceeded',
+        ),
+      )
+      expect(core.addPath).toHaveBeenCalledExactlyOnceWith(toolPath)
+    })
+
+    it('warns and installs when the release is not found', async () => {
+      vi.mocked(HttpClient.prototype.getJson).mockResolvedValue({
+        headers: {},
+        result: null,
+        statusCode: 404,
+      })
+
+      await tanka.install('0.36.3')
+
+      expect(core.warning).toHaveBeenCalledExactlyOnceWith(
+        expect.stringContaining('Unexpected HTTP response: 404'),
+      )
+      expect(core.addPath).toHaveBeenCalledExactlyOnceWith(toolPath)
+    })
   })
 })

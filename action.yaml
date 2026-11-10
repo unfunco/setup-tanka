@@ -9,6 +9,13 @@ inputs:
     default: 0.36.3
     description: Grafana Tanka version.
     required: true
+  token:
+    default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
+    description: >-
+      Token used to read the Grafana Tanka release from the github.com API in
+      order to verify the download. Defaults to the workflow token on
+      github.com, and to unauthenticated requests elsewhere.
+    required: false
 runs:
   main: dist/index.js
   using: node24
