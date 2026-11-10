@@ -8,7 +8,7 @@ inputs:
   tanka-version:
     default: 0.36.3
     description: Grafana Tanka version.
-    required: true
+    required: false
   token:
     default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
     description: >-
@@ -16,6 +16,11 @@ inputs:
       order to verify the download. Defaults to the workflow token on
       github.com, and to unauthenticated requests elsewhere.
     required: false
+outputs:
+  cache-hit:
+    description: Whether Grafana Tanka was found in the runner tool cache.
+  tanka-version:
+    description: The version of Grafana Tanka that was installed.
 runs:
   main: dist/index.js
   using: node24
