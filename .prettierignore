@@ -1,4 +1,5 @@
 *.yaml
+.github/release-please-manifest.json
 CHANGELOG.md
 README.md
 dist/
