@@ -39,5 +39,6 @@
     "test": "vitest run --coverage",
     "typecheck": "tsc"
   },
-  "type": "module"
+  "type": "module",
+  "version": "1.0.0"
 }
