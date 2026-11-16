@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/unfunco/setup-tanka/compare/setup-tanka-v1.0.0...setup-tanka-v1.0.1) (2026-11-16)
+
+
+### Miscellaneous
+
+* Bump semver from 7.8.5 to 7.8.6 ([#41](https://github.com/unfunco/setup-tanka/issues/41)) ([cdc2f25](https://github.com/unfunco/setup-tanka/commit/cdc2f2501adca46aed823ec31192d64a8bc8fd06))
+
 ## 1.0.0 (2026-11-14)
 
 
