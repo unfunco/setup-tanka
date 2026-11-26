@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.1](https://github.com/unfunco/setup-tanka/compare/setup-tanka-v1.0.0...setup-tanka-v1.0.1) (2026-11-26)
+
+
+### 🧹 Miscellaneous
+
+* Bump prettier from 3.9.10 to 3.10.1 ([#43](https://github.com/unfunco/setup-tanka/issues/43)) ([b3e1544](https://github.com/unfunco/setup-tanka/commit/b3e154406c49b19cd6153a67715c7421e9aaf080))
+* Bump rolldown from 1.3.1 to 1.3.2 ([#44](https://github.com/unfunco/setup-tanka/issues/44)) ([f6b32b7](https://github.com/unfunco/setup-tanka/commit/f6b32b74abd9eb7be5b6a730c2f3616595ce7309))
+* Bump semver from 7.8.5 to 7.8.6 ([#41](https://github.com/unfunco/setup-tanka/issues/41)) ([cdc2f25](https://github.com/unfunco/setup-tanka/commit/cdc2f2501adca46aed823ec31192d64a8bc8fd06))
+* Standardise changelog emoji sections ([#45](https://github.com/unfunco/setup-tanka/issues/45)) ([f4022b0](https://github.com/unfunco/setup-tanka/commit/f4022b03169949a1c56c29d1ddf908cf2489818a))
+
 ## 1.0.0 (2026-11-14)
 
 
